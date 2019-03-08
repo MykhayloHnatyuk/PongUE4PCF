@@ -22,8 +22,6 @@ APNGBall::APNGBall()
 void APNGBall::BeginPlay()
 {
 	Super::BeginPlay();
-
-	StartInitialPush();
 }
 
 void APNGBall::Tick(float DeltaTime)
@@ -33,12 +31,23 @@ void APNGBall::Tick(float DeltaTime)
 	UpdateLocation();
 }
 
-#define RANDOM_DIRECTION_POWER FVector(0.5f, 1.0f, 0.0f)
-void APNGBall::StartInitialPush()
+void APNGBall::StopBallAtLocation(FVector Location)
 {
 	if (!GetWorld()->IsServer())
 	{
-		UE_LOG(LogType, Log, TEXT("APNGBall::StartInitialPush not server."));
+		UE_LOG(LogType, Log, TEXT("APNGBall::StopBallAtLocation not server."));
+		return;
+	}
+
+	MulticastRPCUpdatePushData(Location, FVector::ZeroVector, GetServerTime());
+}
+
+#define RANDOM_DIRECTION_POWER FVector(0.5f, 1.0f, 0.0f)
+void APNGBall::PushBallInRandomDirection()
+{
+	if (!GetWorld()->IsServer())
+	{
+		UE_LOG(LogType, Log, TEXT("APNGBall::PushBallInRandomDirection not server."));
 		return;
 	}
 

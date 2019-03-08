@@ -26,29 +26,27 @@ class PONGPCF_API APNGBall : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
+
 	APNGBall();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ball Stats")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pong|Ball Stats")
 	float Speed;
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
+	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
+public:
+
+	void StopBallAtLocation(FVector Location);
+	void PushBallInRandomDirection();
 
 private:
-
-	void StartInitialPush();
 
 	void UpdateLocation();
 
 	FVector GetLocationByTime(float Time) const;
-
 	float GetServerTime() const;
 
 	UFUNCTION()
