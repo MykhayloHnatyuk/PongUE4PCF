@@ -1,6 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "PNGGameStateMain.h"
+#include "GameFramework/PlayerState.h"
+#include "EngineGlobals.h"
+#include "Runtime/Engine/Classes/Engine/Engine.h"
 
 APNGGameStateMain::APNGGameStateMain(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -36,11 +39,17 @@ void APNGGameStateMain::Tick(float DeltaTime)
 		return;
 	}
 
+	UpdateFixedServerTimeSeconds(DeltaTime);
 	ProcessStateMachine();
 }
 
 void APNGGameStateMain::Initialization()
 {
+	if(!GetWorld()->IsServer())
+	{
+		return;
+	}
+
 	mHandlers.Add(GameStates::gsNoState, new FPNGGSNoSate());
 	mHandlers.Add(GameStates::gsWaitingForPlayers, new FPNGGSWaitingForPlayers());
 	mHandlers.Add(GameStates::gsStartingPlay, new FPNGGSStartingPlay());
@@ -62,6 +71,11 @@ void APNGGameStateMain::Initialization()
 
 void APNGGameStateMain::ProcessStateMachine()
 {
+	if (!GetWorld()->IsServer())
+	{
+		return;
+	}
+
 	GameStates currentStateType = GetState();
 	FPNGBaseGameState* currentState = mHandlers.FindRef(currentStateType);
 
@@ -98,6 +112,17 @@ void APNGGameStateMain::TrySwitchState(GameStates value)
 	mDesireState = value;
 }
 
+void APNGGameStateMain::UpdateFixedServerTimeSeconds(float DeltaTime)
+{
+	float realServerTimeSecods = GetServerWorldTimeSeconds();
+	mFixedServerTimeSeconds += DeltaTime;
+
+	if(mFixedServerTimeSeconds < realServerTimeSecods)
+	{
+		mFixedServerTimeSeconds = realServerTimeSecods;
+	}
+}
+
 void FPNGGSNoSate::StartState(UWorld* World)
 {
 	MarkExit(true);
@@ -105,9 +130,8 @@ void FPNGGSNoSate::StartState(UWorld* World)
 
 void FPNGGSWaitingForPlayers::ProcessState(UWorld* World)
 {
-	// Check how many players connected.
-	// if 2 - go to start playing. 
-	MarkExit(true);
+	bool numOfPlayersIsEnough = World->GetGameState()->PlayerArray.Num() == NUM_OF_NEEDED_PLAYERS_ONLINE;
+	MarkExit(numOfPlayersIsEnough);
 }
 
 bool FPNGGSStartingPlay::IsReadyForActivation(UWorld* World, APNGGameStateMain* GameStateActor) const
@@ -146,6 +170,6 @@ void FPNGGSPlaying::ProcessState(UWorld* World)
 
 bool FPNGGSExiting::IsReadyForActivation(UWorld* World, APNGGameStateMain* GameStateActor) const
 {
-	// if we have less than 2 players
-	return false;
+	bool numOfPlayersIsEnough = World->GetGameState()->PlayerArray.Num() == NUM_OF_NEEDED_PLAYERS_ONLINE;
+	return !numOfPlayersIsEnough;
 }

@@ -6,8 +6,7 @@
 #include "Runtime/CoreUObject/Public/UObject/ConstructorHelpers.h"
 #include "EngineGlobals.h"
 #include "Runtime/Engine/Classes/Engine/Engine.h"
-
-#pragma optimize ("", on)
+#include "PNGGlobalDefines.h"
 
 #define SPHERE_COMP_NAME "Sphere"
 APNGBall::APNGBall()
@@ -39,7 +38,8 @@ void APNGBall::StopBallAtLocation(FVector Location)
 		return;
 	}
 
-	MulticastRPCUpdatePushData(Location, FVector::ZeroVector, GetServerTime());
+	float serverTime = GetFixedServerTime();
+	MulticastRPCUpdatePushData(Location, FVector::ZeroVector, serverTime);
 }
 
 #define RANDOM_DIRECTION_POWER FVector(0.5f, 1.0f, 0.0f)
@@ -56,7 +56,7 @@ void APNGBall::PushBallInRandomDirection()
 	FVector randDirection = FMath::VRand() * RANDOM_DIRECTION_POWER;
 	randDirection = randDirection.GetSafeNormal();
 
-	float serverTime = GetServerTime();
+	float serverTime = GetFixedServerTime();
 
 	MulticastRPCUpdatePushData(currLocation, randDirection, serverTime);
 }
@@ -69,13 +69,10 @@ void APNGBall::UpdateLocation()
 		return;
 	}
 
-	float serverTime = GetServerTime();
+	float serverTime = GetFixedServerTime();
 	const FVector newLocation = GetLocationByTime(serverTime);
 
 	SetActorLocation(newLocation, true);
-/*
-	FColor color = (GetWorld()->IsServer()) ? FColor::Red : FColor::Green;
-	GEngine->AddOnScreenDebugMessage(-1, 0.02f, color, FString::Printf(TEXT("APNGBall::UpdateLocation time: %f newLocation %s"), serverTime, *newLocation.ToString()));*/
 }
 
 FVector APNGBall::GetLocationByTime(float Time) const
@@ -85,12 +82,6 @@ FVector APNGBall::GetLocationByTime(float Time) const
 	result += mLastPush.Direction * Speed * timePassed;
 
 	return result;
-}
-
-float APNGBall::GetServerTime() const
-{
-	const AGameStateBase* gs = GetWorld()->GetGameState();
-	return gs->GetServerWorldTimeSeconds();
 }
 
 void APNGBall::OnBeginOverlap(UPrimitiveComponent * OverlappedComp, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
@@ -103,10 +94,9 @@ void APNGBall::OnBeginOverlap(UPrimitiveComponent * OverlappedComp, AActor * Oth
 
 	if (OtherActor != nullptr)
 	{
-		UE_LOG(LogType, Log, TEXT("APNGBall::OnBeginOverlap actor %  SweepResult.Normal: %s  SweepResult.ImpactNormal: %s"), *OtherActor->GetName(), *SweepResult.Normal.ToString(), *SweepResult.ImpactNormal.ToString());
 		FVector hitPlaneNormal = SweepResult.Normal * FVector(1, 1, 0);
 		FVector reflection = mLastPush.Direction - FVector::DotProduct(hitPlaneNormal, mLastPush.Direction) * hitPlaneNormal * 2;
-		float serverTime = GetServerTime();
+		float serverTime = GetFixedServerTime();
 
 		MulticastRPCUpdatePushData(GetActorLocation(), reflection.GetSafeNormal(), serverTime);
 	}
@@ -114,12 +104,7 @@ void APNGBall::OnBeginOverlap(UPrimitiveComponent * OverlappedComp, AActor * Oth
 
 void APNGBall::MulticastRPCUpdatePushData_Implementation(FVector Start, FVector Direction, float Time)
 {
-	FColor color = (GetWorld()->IsServer()) ? FColor::Red : FColor::Green;
-	GEngine->AddOnScreenDebugMessage(-1, 1.0f, color, FString::Printf(TEXT("APNGBall::MulticastRPCUpdatePushData New direction %s"), *Direction.ToString()));
-
 	mLastPush.StartLocation = Start;
 	mLastPush.Direction = Direction;
 	mLastPush.Time = Time;
 }
-
-#pragma optimize ("", off)

@@ -31,6 +31,8 @@ private:
 	UFUNCTION(Reliable, Server, WithValidation)
 	void ServerRPCSpawnBall();
 
+	void ExitLevel() const;
+
 	UPROPERTY()
 	APNGBall* mBall;
 };

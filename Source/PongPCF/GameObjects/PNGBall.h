@@ -47,7 +47,6 @@ private:
 	void UpdateLocation();
 
 	FVector GetLocationByTime(float Time) const;
-	float GetServerTime() const;
 
 	UFUNCTION()
 	void OnBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

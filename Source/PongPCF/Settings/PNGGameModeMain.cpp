@@ -4,6 +4,7 @@
 #include "GameObjects/PNGBall.h"
 #include "GameObjects/PNGPlayerStart.h"
 #include "Runtime/Engine/Public/EngineUtils.h"
+#include "Engine.h"
 
 #define DEFAULT_BALL_LOCATION FVector::ZeroVector
 
@@ -59,9 +60,20 @@ void APNGGameModeMain::OnGameStateChangedHandler(GameStates NewState)
 	case GameStates::gsPlaying:
 		mBall->PushBallInRandomDirection();
 		break;
+	case GameStates::gsExiting:
+		ExitLevel();
 	default:
 		break;
 	}
+}
+
+#define DISCONNECT_COMMAND "disconnect"
+#define OPEN_LOBBY_COMMAND "open Lobby"
+void APNGGameModeMain::ExitLevel() const
+{ 
+	APlayerController* playerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	playerController->ConsoleCommand(TEXT(DISCONNECT_COMMAND), true);
+	playerController->ConsoleCommand(TEXT(OPEN_LOBBY_COMMAND), true);
 }
 
 void APNGGameModeMain::ServerRPCSpawnBall_Implementation()

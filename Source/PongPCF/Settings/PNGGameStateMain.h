@@ -3,9 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameState.h"
+#include "GameFramework/GameStateBase.h"
 #include "PNGGameStateMain.generated.h"
 
+#define NUM_OF_NEEDED_PLAYERS_ONLINE 2
 
 struct FPNGBaseGameState;
 
@@ -48,13 +49,19 @@ public:
 	GameStates GetState() const { return mCurrentState; }
 	GameStates GetDesireState() const { return mDesireState; }
 
+	float GetFixedServerWorldTimeSeconds() const { return mFixedServerTimeSeconds; }
+
 private:
+
+	void UpdateFixedServerTimeSeconds(float DeltaTime);
 
 	TMap<GameStates, FPNGBaseGameState*> mHandlers;
 	TMap<GameStates, TArray<GameStates>> mTransitions;
 
 	GameStates mCurrentState;
 	GameStates mDesireState;
+
+	float mFixedServerTimeSeconds;
 };
 
 USTRUCT()
