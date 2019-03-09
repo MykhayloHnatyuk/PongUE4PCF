@@ -18,7 +18,7 @@ class PONGPCF_API APNGGameModeMain : public AGameModeBase
 
 	virtual void BeginPlay() override;
 
-	virtual AActor* ChoosePlayerStart(AController* Player) override;
+	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Pong|DynamicActors")
 	TSubclassOf<APNGBall> BallType;

@@ -2,6 +2,8 @@
 
 #include "PNGGameModeMain.h"
 #include "GameObjects/PNGBall.h"
+#include "GameObjects/PNGPlayerStart.h"
+#include "Runtime/Engine/Public/EngineUtils.h"
 
 #define DEFAULT_BALL_LOCATION FVector::ZeroVector
 
@@ -21,18 +23,23 @@ void APNGGameModeMain::BeginPlay()
 	ServerRPCSpawnBall();
 }
 
-AActor* APNGGameModeMain::ChoosePlayerStart(AController* Player)
+AActor* APNGGameModeMain::ChoosePlayerStart_Implementation(AController* Player)
 {
-	APlayerStart* FoundPlayerStart = nullptr;
-
+	AActor* FoundPlayerStart = nullptr;
 	UWorld* World = GetWorld();
-	for (TActorIterator<APlayerStart> It(World); It; ++It)
+
+	for (TActorIterator<APNGPlayerStart> It(World); It; ++It)
 	{
-		APlayerStart* PlayerStart = *It;
-		FoundPlayerStart = PlayerStart;
+		APNGPlayerStart* PlayerStart = *It;
+		if(!PlayerStart->GetWasUsed())		
+		{
+			FoundPlayerStart = PlayerStart;
+			PlayerStart->SetWasUsed(true);
+			break;
+		}
 	}
 
-	if(!FoundPlayerStart)
+	if (FoundPlayerStart == nullptr)
 	{
 		FoundPlayerStart = Super::ChoosePlayerStart(Player);
 	}
