@@ -2,24 +2,10 @@
 
 #include "PNGPlayerControllerMain.h"
 #include "PNGPawnMain.h"
-#include "Kismet/GameplayStatics.h"
-
-#include "Runtime/Engine/Classes/Engine/Engine.h"
 
 void APNGPlayerControllerMain::BeginPlay()
 {
 	Super::BeginPlay();
-
-	Possess(GetPawn());
-
-	if (GetWorld()->IsServer())
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.02f, FColor::Red, FString::Printf(TEXT(" BeginPlay IS SERVER INITED")));
-	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.02f, FColor::Green, FString::Printf(TEXT(" BeginPlay CLIENT INITED")));
-	}
 }
 
 #define MOVE_THRESHOLD 0.01f
@@ -37,8 +23,6 @@ void APNGPlayerControllerMain::PlayerTick(float DeltaTime)
 		FVector newLocation = pawn->GetActorLocation();
 		newLocation += FVector::ForwardVector * mLastMoveAxisValue * pawn->GetMovementSpeed() * DeltaTime;
 		pawn->LimitMoveToLocation(newLocation);
-
-		//MoveTo(newLocation);
 
 		if (HasAuthority())
 		{
@@ -58,15 +42,6 @@ void APNGPlayerControllerMain::SetupInputComponent()
 	Super::SetupInputComponent(); 
 
 	InputComponent->BindAxis(MOVE_UP_AXIS_NAME, this, &APNGPlayerControllerMain::MoveUpInput);
-
-	if(GetWorld()->IsServer())
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.02f, FColor::Red, FString::Printf(TEXT("IS SERVER INITED")));
-	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.02f, FColor::Green, FString::Printf(TEXT("CLIENT INITED")));
-	}
 }
 
 bool APNGPlayerControllerMain::ServerRPCMoveTo_Validate(FVector NewLocation)
@@ -77,17 +52,11 @@ bool APNGPlayerControllerMain::ServerRPCMoveTo_Validate(FVector NewLocation)
 void APNGPlayerControllerMain::ServerRPCMoveTo_Implementation(FVector NewLocation)
 {
 	MoveTo(NewLocation);
-
-	FColor color = (GetWorld()->IsServer()) ? FColor::Red : FColor::Green;
-	GEngine->AddOnScreenDebugMessage(-1, 0.02f, color, FString::Printf(TEXT("APNGPlayerControllerMain::ServerRPCMoveTo_Implementation newLocation %s"), *NewLocation.ToString()));
 }
 
 void APNGPlayerControllerMain::MulticastRPCMoveTo_Implementation(FVector NewLocation)
 {
 	MoveTo(NewLocation);
-
-	FColor color = (GetWorld()->IsServer()) ? FColor::Red : FColor::Green;
-	GEngine->AddOnScreenDebugMessage(-1, 0.02f, color, FString::Printf(TEXT("APNGPlayerControllerMain::MulticastRPCMoveTo_Implementation newLocation %s"), *NewLocation.ToString()));
 }
 
 void APNGPlayerControllerMain::MoveTo(FVector NewLocation)
@@ -101,7 +70,4 @@ void APNGPlayerControllerMain::MoveTo(FVector NewLocation)
 void APNGPlayerControllerMain::MoveUpInput(float AxisValue)
 {
 	mLastMoveAxisValue = AxisValue;
-
-	FColor color = (GetWorld()->IsServer()) ? FColor::Red : FColor::Green;
-	GEngine->AddOnScreenDebugMessage(-1, 0.02f, color, FString::Printf(TEXT("APNGPlayerControllerMain::MoveUp mLastMoveAxisValue: %f"), mLastMoveAxisValue));
 }

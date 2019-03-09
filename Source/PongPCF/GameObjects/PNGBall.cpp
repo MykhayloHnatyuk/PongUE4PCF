@@ -7,6 +7,8 @@
 #include "EngineGlobals.h"
 #include "Runtime/Engine/Classes/Engine/Engine.h"
 #include "PNGGlobalDefines.h"
+#include "PNGGoalZone.h"
+#include "Player/PNGPawnMain.h"
 
 #define SPHERE_COMP_NAME "Sphere"
 APNGBall::APNGBall()
@@ -42,7 +44,7 @@ void APNGBall::StopBallAtLocation(FVector Location)
 	MulticastRPCUpdatePushData(Location, FVector::ZeroVector, serverTime);
 }
 
-#define RANDOM_DIRECTION_POWER FVector(0.5f, 1.0f, 0.0f)
+#define RANDOM_DIRECTION_POWER FVector(1.0f, 5.0f, 0.0f)
 void APNGBall::PushBallInRandomDirection()
 {
 	if (!GetWorld()->IsServer())
@@ -84,6 +86,7 @@ FVector APNGBall::GetLocationByTime(float Time) const
 	return result;
 }
 
+#define PAWN_HIT_POINT_INFLUENCE_POWER 2.0f
 void APNGBall::OnBeginOverlap(UPrimitiveComponent * OverlappedComp, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
 	if (!GetWorld()->IsServer())
@@ -94,17 +97,42 @@ void APNGBall::OnBeginOverlap(UPrimitiveComponent * OverlappedComp, AActor * Oth
 
 	if (OtherActor != nullptr)
 	{
-		FVector hitPlaneNormal = SweepResult.Normal * FVector(1, 1, 0);
-		FVector reflection = mLastPush.Direction - FVector::DotProduct(hitPlaneNormal, mLastPush.Direction) * hitPlaneNormal * 2;
+		auto ReflectVector = [](const FVector& InVector, const FVector& Normal) -> FVector
+		{
+			return InVector - FVector::DotProduct(Normal, InVector) * Normal * 2;
+		};
+
+		FVector newDirection = FVector::ZeroVector;
+
+		if(APNGPawnMain* pawn = Cast<APNGPawnMain>(OtherActor))
+		{
+			const FVector hitPlaneNormal = pawn->GetActorForwardVector();
+			const FVector reflectedDirection = ReflectVector(mLastPush.Direction, hitPlaneNormal);
+			
+			// Edit final direction based on a hit location just to make things more unpredictable for an other player.
+			newDirection = reflectedDirection + (GetActorLocation() - pawn->GetActorLocation()).GetSafeNormal() * PAWN_HIT_POINT_INFLUENCE_POWER;
+		}
+		else if (Cast<APNGGoalZone>(OtherActor))
+		{
+		}
+		else
+		{
+			const FVector hitPlaneNormal = (SweepResult.Normal * FVector(1, 1, 0)).GetSafeNormal();
+			newDirection = ReflectVector(mLastPush.Direction, hitPlaneNormal);
+		}
+
 		float serverTime = GetFixedServerTime();
 
-		MulticastRPCUpdatePushData(GetActorLocation(), reflection.GetSafeNormal(), serverTime);
+		// Just to make that we will never move out of 2D space.
+		newDirection *= FVector(1, 1, 0);
+
+		MulticastRPCUpdatePushData(GetActorLocation(), newDirection.GetSafeNormal(), serverTime);
 	}
 }
 
 void APNGBall::MulticastRPCUpdatePushData_Implementation(FVector Start, FVector Direction, float Time)
 {
 	mLastPush.StartLocation = Start;
-	mLastPush.Direction = Direction;
+	mLastPush.Direction = Direction.GetSafeNormal();
 	mLastPush.Time = Time;
 }

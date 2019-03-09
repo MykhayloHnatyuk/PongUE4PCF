@@ -6,6 +6,8 @@
 #include "GameFramework/Pawn.h"
 #include "PNGPawnMain.generated.h"
 
+class UStaticMeshComponent;
+
 UCLASS()
 class PONGPCF_API APNGPawnMain : public APawn
 {
@@ -21,8 +23,14 @@ protected:
 
 	virtual void BeginPlay() override;
 
+	UFUNCTION(BlueprintCallable)
+	void InitializeBP(UStaticMeshComponent* PawnMesh);
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pong|PlayerParams")
 	float MovementSpeed;
+
+	UPROPERTY(EditAnywhere, Category = "Pong|Player View")
+	UMaterialInterface* EnemyViewMaterial;
 
 public:	
 
@@ -32,5 +40,11 @@ public:
 
 	// Limits OutTargetedLocation if it will hit something on attempt to change location.
 	void LimitMoveToLocation(FVector& OutTargetedLocation) const;
+
+private:
+
+	void SetupView();
+
+	UStaticMeshComponent* mMesh;
 
 };

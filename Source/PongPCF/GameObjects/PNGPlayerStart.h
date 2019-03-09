@@ -15,11 +15,12 @@ class PONGPCF_API APNGPlayerStart : public APlayerStart
 	GENERATED_BODY()
 	
 public:
+	
+	bool IsGoodForPlayerOne() const { return IsReservedForPlayerOne; }
 
-	void SetWasUsed(bool Value) { mWasUsed = Value; };
-	bool GetWasUsed() const { return mWasUsed; }
+protected:
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pong|Start Settings")
+	bool IsReservedForPlayerOne;
 
-private:
-
-	bool mWasUsed;
 };

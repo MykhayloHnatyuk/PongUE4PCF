@@ -31,11 +31,12 @@ AActor* APNGGameModeMain::ChoosePlayerStart_Implementation(AController* Player)
 
 	for (TActorIterator<APNGPlayerStart> It(World); It; ++It)
 	{
+		bool isPlayerOne = Player->IsLocalPlayerController() && World->IsServer();
+
 		APNGPlayerStart* PlayerStart = *It;
-		if(!PlayerStart->GetWasUsed())		
+		if(PlayerStart->IsGoodForPlayerOne() == isPlayerOne)		
 		{
 			FoundPlayerStart = PlayerStart;
-			PlayerStart->SetWasUsed(true);
 			break;
 		}
 	}
