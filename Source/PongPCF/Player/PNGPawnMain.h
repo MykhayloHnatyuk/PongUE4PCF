@@ -12,19 +12,25 @@ class PONGPCF_API APNGPawnMain : public APawn
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this pawn's properties
+
 	APNGPawnMain();
 
+	float GetMovementSpeed() const { return MovementSpeed; }
+
 protected:
-	// Called when the game starts or when spawned
+
 	virtual void BeginPlay() override;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pong|PlayerParams")
+	float MovementSpeed;
+
 public:	
-	// Called every frame
+
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	// Limits OutTargetedLocation if it will hit something on attempt to change location.
+	void LimitMoveToLocation(FVector& OutTargetedLocation) const;
 
 };

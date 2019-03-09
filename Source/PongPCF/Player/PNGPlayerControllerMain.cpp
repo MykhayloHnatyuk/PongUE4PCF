@@ -32,11 +32,13 @@ void APNGPlayerControllerMain::PlayerTick(float DeltaTime)
 		return;
 	}
 
-	if (auto* pawn = GetPawn())
+	if (auto* pawn = Cast<APNGPawnMain>(GetPawn()))
 	{
 		FVector newLocation = pawn->GetActorLocation();
-		newLocation += FVector::ForwardVector * mLastMoveAxisValue * 200.f * DeltaTime;
-		MoveTo(newLocation);
+		newLocation += FVector::ForwardVector * mLastMoveAxisValue * pawn->GetMovementSpeed() * DeltaTime;
+		pawn->LimitMoveToLocation(newLocation);
+
+		//MoveTo(newLocation);
 
 		if (HasAuthority())
 		{

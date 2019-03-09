@@ -1,12 +1,9 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "PNGPawnMain.h"
+#include "DrawDebugHelpers.h"
 
 APNGPawnMain::APNGPawnMain()
 {
- 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
 }
 
 void APNGPawnMain::BeginPlay()
@@ -27,3 +24,22 @@ void APNGPawnMain::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 }
 
+void APNGPawnMain::LimitMoveToLocation(FVector& OutTargetedLocation) const
+{
+	const FVector currentLocation = GetActorLocation(); 
+
+	if(currentLocation == OutTargetedLocation)
+	{
+		return;
+	}
+
+	const FVector direction = (OutTargetedLocation - currentLocation).GetSafeNormal();
+	float halfLength = GetComponentsBoundingBox(false).GetExtent().X;
+	const FVector traceEndPoint = OutTargetedLocation + direction * halfLength;
+
+	FHitResult hitResult;
+	if(GetWorld()->LineTraceSingleByChannel(hitResult, currentLocation, traceEndPoint, ECollisionChannel::ECC_GameTraceChannel11))
+	{
+		OutTargetedLocation = hitResult.Location - direction * halfLength;
+	}
+}
