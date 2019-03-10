@@ -10,7 +10,7 @@
 class APNGBall;
 class APNGGoalZone;
 
-#define TARGET_GAME_SCORE_TO_WIN 7
+#define TARGET_GAME_SCORE_TO_WIN 5
 
 UCLASS()
 class PONGPCF_API APNGGameModeMain : public AGameModeBase

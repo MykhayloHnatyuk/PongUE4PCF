@@ -18,6 +18,7 @@ enum class PNGGameState : uint8
 	gsSetupPlay				UMETA(DisplayName = "SetupPlay"),
 	gsStartingPlay			UMETA(DisplayName = "StartingPlay"),
 	gsPlaying				UMETA(DisplayName = "Playing"),
+	gsFinished				UMETA(DisplayName = "Finished"),
 	gsExiting				UMETA(DisplayName = "Exiting")
 };
 
@@ -55,6 +56,9 @@ public:
 	FPNGGameScoreChangedEvent& OnGameScoreChanged() { return GameScoreChangedEvent; }
 
 	void UpdateGameScore(int Player1Score, int Player2Score);
+	
+	// Resets game (score, etc.) params to default.
+	void ResetGameState();
 
 private:
 
@@ -169,6 +173,27 @@ struct FPNGGSPlaying : public FPNGBaseGameState
 	virtual	~FPNGGSPlaying() override = default;
 
 	virtual void StartState(UWorld* World) override;
+};
+
+USTRUCT()
+struct FPNGGSFinished : public FPNGBaseGameState
+{
+	GENERATED_USTRUCT_BODY()
+
+	virtual	~FPNGGSFinished() override = default;
+
+	virtual bool IsReadyForActivation(UWorld* World, APNGGameStateMain* GameStateActor) const override;
+
+	virtual void StartState(UWorld* World) override;
+
+	virtual void ProcessState(UWorld* World) override;
+
+	virtual void EndState(UWorld* World) override;
+
+private:
+	
+	// Time to wait until restart.
+	float mRestartTimer;
 };
 
 USTRUCT()

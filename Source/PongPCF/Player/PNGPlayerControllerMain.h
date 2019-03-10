@@ -7,6 +7,7 @@
 #include "PNGPlayerControllerMain.generated.h"
 
 class APNGPawnMain;
+class APNGPlayerState;
 
 UCLASS()
 class PONGPCF_API APNGPlayerControllerMain : public APlayerController
@@ -24,6 +25,8 @@ protected:
 public:
 
 	bool IsPlayerOne() const;
+
+	APNGPlayerState* GetPNGPlayerState() const;
 
 private:
 

@@ -16,8 +16,14 @@ public:
 	UFUNCTION()
 	virtual void OnRep_IsReady();
 
+	UFUNCTION()
+	virtual void OnRep_IsPlayerOne();
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const override;
 
 	UPROPERTY(replicatedUsing = OnRep_IsReady, BlueprintReadOnly, Category = PlayerState)
 	bool bIsReady;
+
+	UPROPERTY(replicatedUsing = OnRep_IsReady, BlueprintReadOnly, Category = PlayerState)
+	bool bIsPlayerOne;
 };

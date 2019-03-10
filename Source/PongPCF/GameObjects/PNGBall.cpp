@@ -44,7 +44,7 @@ void APNGBall::StopBallAtLocation(FVector Location)
 	MulticastRPCUpdatePushData(Location, FVector::ZeroVector, serverTime);
 }
 
-#define RANDOM_DIRECTION_POWER FVector(1.0f, 5.0f, 0.0f)
+#define RANDOM_DIRECTION_POWER FVector(1.0f, 1.0f, 0.0f)
 void APNGBall::PushBallInRandomDirection()
 {
 	if (!GetWorld()->IsServer())
@@ -55,8 +55,13 @@ void APNGBall::PushBallInRandomDirection()
 
 	const FVector& currLocation = GetActorLocation();
 
-	FVector randDirection = FMath::VRand() * RANDOM_DIRECTION_POWER;
-	randDirection = randDirection.GetSafeNormal();
+	// Create random direction for initial push,
+	// and let's make sure it won't be too vertical.
+	FVector randDirection = (FMath::VRand() * RANDOM_DIRECTION_POWER).GetSafeNormal();
+	if(abs(randDirection.X) > abs(randDirection.Y))
+	{
+		randDirection = FVector(randDirection.Y, randDirection.X, 0);
+	}
 
 	float serverTime = GetFixedServerTime();
 

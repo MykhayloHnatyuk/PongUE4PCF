@@ -4,7 +4,8 @@
 #include "GameFramework/PlayerState.h"
 #include "EngineGlobals.h"
 #include "Player/PNGPlayerState.h"
-#include "Runtime/Engine/Classes/Engine/Engine.h"
+#include "Player/PNGPlayerControllerMain.h"
+#include "Engine.h"
 
 APNGGameStateMain::APNGGameStateMain(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -57,13 +58,15 @@ void APNGGameStateMain::Initialization()
 	mHandlers.Add(PNGGameState::gsSetupPlay, new FPNGGSSetupPlay());
 	mHandlers.Add(PNGGameState::gsStartingPlay, new FPNGGSStartingPlay());
 	mHandlers.Add(PNGGameState::gsPlaying, new FPNGGSPlaying());
+	mHandlers.Add(PNGGameState::gsFinished, new FPNGGSFinished());
 	mHandlers.Add(PNGGameState::gsExiting, new FPNGGSExiting());
 
 	mTransitions.Add(PNGGameState::gsNoState, { PNGGameState::gsWaitingForPlayers });
 	mTransitions.Add(PNGGameState::gsWaitingForPlayers, { PNGGameState::gsSetupPlay });
 	mTransitions.Add(PNGGameState::gsSetupPlay, { PNGGameState::gsStartingPlay });
 	mTransitions.Add(PNGGameState::gsStartingPlay, { PNGGameState::gsPlaying, PNGGameState::gsExiting });
-	mTransitions.Add(PNGGameState::gsPlaying, { PNGGameState::gsStartingPlay, PNGGameState::gsExiting });
+	mTransitions.Add(PNGGameState::gsPlaying, { PNGGameState::gsStartingPlay, PNGGameState::gsFinished, PNGGameState::gsExiting });
+	mTransitions.Add(PNGGameState::gsFinished, { PNGGameState::gsSetupPlay, PNGGameState::gsExiting });
 	mTransitions.Add(PNGGameState::gsExiting, { PNGGameState::gsNoState });
 
 	mCurrentState = PNGGameState::gsNoState;
@@ -122,24 +125,42 @@ void APNGGameStateMain::UpdateGameScore(int Player1Score, int Player2Score)
 	MulticastRPCNotifyScoreChange(Player1Score, Player2Score);
 }
 
+void APNGGameStateMain::ResetGameState()
+{
+	for (auto player : PlayerArray)
+	{
+		player->Score = 0;
+	}
+
+	UpdateGameScore(0, 0);
+}
+
 void APNGGameStateMain::MulticastRPCNotifyStateChange_Implementation(PNGGameState NewState)
 {
-	// First, lets update state value for our clients.
+	// First, let's update state value for our clients.
 	if (!GetWorld()->IsServer())
 	{
 		SetState(NewState);
 	}
 
-	UE_LOG(LogType, Log, TEXT("%d APNGGameStateMain::MulticastRPCNotifyStateChange_Implementation NewState: %d"), GetWorld()->IsServer(), int(NewState));
-
-	// Now lets broadcast it for everybody.
+	// Now, let's broadcast it locally for everybody.
 	OnGameStateChanged().Broadcast(NewState);
 }
 
 void APNGGameStateMain::MulticastRPCNotifyScoreChange_Implementation(int Player1Score, int Player2Score)
 {
-	UE_LOG(LogType, Log, TEXT("%d APNGGameStateMain::MulticastRPCNotifyScoreChange_Implementation %d %d"), GetWorld()->IsServer(), Player1Score, Player2Score);
-	OnGameScoreChanged().Broadcast(Player1Score, Player2Score);
+	// PlayerState parameters will be updated with delay. 
+	// Let's update scores on the clients from here.
+	for(auto player : PlayerArray)
+	{
+		// We have no valid player controllers for all players on a client,
+		// so we will use bIsPlayerOne from PlayerState.
+		auto state = Cast<APNGPlayerState>(player);
+		state->Score = state->bIsPlayerOne ? Player1Score : Player2Score;
+	}
+
+	// Now, let's broadcast new scores locally for everybody.
+	OnGameScoreChanged().Broadcast(Player1Score, Player2Score);	
 }
 
 void APNGGameStateMain::UpdateFixedServerTimeSeconds(float DeltaTime)
@@ -218,7 +239,6 @@ void FPNGGSStartingPlay::StartState(UWorld* World)
 void FPNGGSStartingPlay::ProcessState(UWorld* World)
 {
 	mStartTimer += World->GetDeltaSeconds();
-
 	if(mStartTimer > DELAY_BEFORE_START)
 	{
 		MarkExit(true);
@@ -229,6 +249,34 @@ void FPNGGSPlaying::StartState(UWorld* World)
 {
 	// We are ready to exit whenever any other state is needed.
 	MarkExit(true);
+}
+
+bool FPNGGSFinished::IsReadyForActivation(UWorld* World, APNGGameStateMain* GameStateActor) const
+{
+	return GameStateActor->GetDesiredState() == PNGGameState::gsFinished;
+}
+
+void FPNGGSFinished::StartState(UWorld* World)
+{
+	Super::StartState(World);
+
+	mRestartTimer = 0.0f;
+}
+
+#define TIME_TO_WAIT_BEFORE_RESTART 5
+void FPNGGSFinished::ProcessState(UWorld* World)
+{
+	mRestartTimer += World->GetDeltaSeconds();
+	if(mRestartTimer > TIME_TO_WAIT_BEFORE_RESTART)
+	{
+		MarkExit(true);
+	}
+}
+
+void FPNGGSFinished::EndState(UWorld* World)
+{
+	APNGGameStateMain* gs = Cast<APNGGameStateMain>(World->GetGameState());
+	gs->ResetGameState();
 }
 
 bool FPNGGSExiting::IsReadyForActivation(UWorld* World, APNGGameStateMain* GameStateActor) const

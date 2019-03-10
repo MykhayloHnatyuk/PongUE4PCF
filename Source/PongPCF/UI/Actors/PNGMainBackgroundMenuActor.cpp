@@ -26,12 +26,20 @@ void APNGMainBackgroundMenuActor::InitializeBP(UWidgetComponent* MainWidgetCompo
 #define STATUS_TEXT_WAITING_FOR_PLAYER "let's wait for Player#2"
 #define STATUS_TEXT_STARTING_PLAY "get ready"
 #define STATUS_TEXT_PLAYING "score %d more to win"
+#define STATUS_TEXT_WON "yeah! let's do it again"
+#define STATUS_TEXT_LOSE "you lost... let's try again"
 #define STATUS_TEXT_DEFAULT ""
 void APNGMainBackgroundMenuActor::OnGameStateChangedHandler(PNGGameState NewState)
 {
 	ensure(mMainMenuWidget);
 
 	FString Text = STATUS_TEXT_DEFAULT;
+
+	auto GetLocalPlayerScore = [this]()->int
+	{
+		auto pc = UGameplayStatics::GetPlayerController(this, 0);
+		return pc->PlayerState->Score;
+	};
 
 	switch (NewState)
 	{
@@ -44,12 +52,16 @@ void APNGMainBackgroundMenuActor::OnGameStateChangedHandler(PNGGameState NewStat
 		break;
 	case PNGGameState::gsPlaying:
 	{
-		// Calculate how much our local player has to score in order to win.
-		auto pc = UGameplayStatics::GetPlayerController(this, 0);
-		int currentScore = pc->PlayerState->Score;
+		int currentScore = GetLocalPlayerScore();
 		int leftToScore = TARGET_GAME_SCORE_TO_WIN - currentScore;
-
 		Text = *FString::Printf(TEXT(STATUS_TEXT_PLAYING), leftToScore);
+	}
+		break;
+	case PNGGameState::gsFinished:
+	{
+		int localPlayerSocre = GetLocalPlayerScore();
+		bool bWeWon = localPlayerSocre >= TARGET_GAME_SCORE_TO_WIN;
+		Text = bWeWon ? STATUS_TEXT_WON : STATUS_TEXT_LOSE;
 	}
 		break;
 	default:

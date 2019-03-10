@@ -96,12 +96,18 @@ void APNGGameModeMain::OnBallHitGoalHandler(APNGGoalZone* GoalZone)
 		controller->IsPlayerOne() ? player1Score = player->Score : player2Score = player->Score;
 	}
 
-
-	UE_LOG(LogType, Log, TEXT("%d APNGGameModeMain::OnBallHitGoalHandler %d %d"), GetWorld()->IsServer(), player1Score, player2Score);
-
 	gs->UpdateGameScore(player1Score, player2Score);
 	
-	gs->TrySwitchState(PNGGameState::gsStartingPlay);
+	if(FMath::Max(player1Score, player2Score) >= TARGET_GAME_SCORE_TO_WIN)
+	{
+		// Game session finished.
+		gs->TrySwitchState(PNGGameState::gsFinished);
+	}
+	else
+	{
+		// Still no winner. Start next play.
+		gs->TrySwitchState(PNGGameState::gsStartingPlay);
+	}
 }
 
 #define DISCONNECT_COMMAND "disconnect"

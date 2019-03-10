@@ -3,6 +3,7 @@
 #include "PNGPlayerControllerMain.h"
 #include "PNGPawnMain.h"
 #include "PNGPlayerState.h"
+#include "Engine.h"
 
 void APNGPlayerControllerMain::BeginPlay()
 {
@@ -14,6 +15,8 @@ void APNGPlayerControllerMain::BeginPlay()
 	{
 		ServerRPCSetReadyState();
 	}
+
+	GetPNGPlayerState()->bIsPlayerOne = IsPlayerOne();
 }
 
 #define MOVE_THRESHOLD 0.01f
@@ -54,7 +57,14 @@ void APNGPlayerControllerMain::SetupInputComponent()
 
 bool APNGPlayerControllerMain::IsPlayerOne() const
 {
-	return IsLocalPlayerController() && GetWorld()->IsServer();
+	return IsLocalPlayerController() && GetWorld() && GetWorld()->IsServer();
+}
+
+APNGPlayerState* APNGPlayerControllerMain::GetPNGPlayerState() const
+{
+	APNGPlayerState* state = GetPlayerState<APNGPlayerState>();
+	ensure(state);
+	return state;
 }
 
 bool APNGPlayerControllerMain::ServerRPCMoveTo_Validate(FVector NewLocation)
@@ -74,9 +84,7 @@ void APNGPlayerControllerMain::MulticastRPCMoveTo_Implementation(FVector NewLoca
 
 void APNGPlayerControllerMain::ServerRPCSetReadyState_Implementation()
 {
-	APNGPlayerState* state = GetPlayerState<APNGPlayerState>();
-	ensure(state);
-	state->bIsReady = true;
+	GetPNGPlayerState()->bIsReady = true;
 }
 
 bool APNGPlayerControllerMain::ServerRPCSetReadyState_Validate()
