@@ -22,6 +22,7 @@ void APNGGameStateMain::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	TArray<FPNGBaseGameState*> GraphToClean;
 	mHandlers.GenerateValueArray(GraphToClean);
+
 	for (FPNGBaseGameState* GraphState : GraphToClean)
 	{
 		delete GraphState;
@@ -50,20 +51,20 @@ void APNGGameStateMain::Initialization()
 		return;
 	}
 
-	mHandlers.Add(GameStates::gsNoState, new FPNGGSNoSate());
-	mHandlers.Add(GameStates::gsWaitingForPlayers, new FPNGGSWaitingForPlayers());
-	mHandlers.Add(GameStates::gsStartingPlay, new FPNGGSStartingPlay());
-	mHandlers.Add(GameStates::gsPlaying, new FPNGGSPlaying());
-	mHandlers.Add(GameStates::gsExiting, new FPNGGSExiting());
+	mHandlers.Add(PNGGameState::gsNoState, new FPNGGSNoSate());
+	mHandlers.Add(PNGGameState::gsWaitingForPlayers, new FPNGGSWaitingForPlayers());
+	mHandlers.Add(PNGGameState::gsStartingPlay, new FPNGGSStartingPlay());
+	mHandlers.Add(PNGGameState::gsPlaying, new FPNGGSPlaying());
+	mHandlers.Add(PNGGameState::gsExiting, new FPNGGSExiting());
 
-	mTransitions.Add(GameStates::gsNoState, { GameStates::gsWaitingForPlayers });
-	mTransitions.Add(GameStates::gsWaitingForPlayers, { GameStates::gsStartingPlay });
-	mTransitions.Add(GameStates::gsStartingPlay, { GameStates::gsPlaying, GameStates::gsExiting });
-	mTransitions.Add(GameStates::gsPlaying, { GameStates::gsStartingPlay, GameStates::gsExiting });
-	mTransitions.Add(GameStates::gsExiting, { GameStates::gsNoState });
+	mTransitions.Add(PNGGameState::gsNoState, { PNGGameState::gsWaitingForPlayers });
+	mTransitions.Add(PNGGameState::gsWaitingForPlayers, { PNGGameState::gsStartingPlay });
+	mTransitions.Add(PNGGameState::gsStartingPlay, { PNGGameState::gsPlaying, PNGGameState::gsExiting });
+	mTransitions.Add(PNGGameState::gsPlaying, { PNGGameState::gsStartingPlay, PNGGameState::gsExiting });
+	mTransitions.Add(PNGGameState::gsExiting, { PNGGameState::gsNoState });
 
-	mCurrentState = GameStates::gsNoState;
-	mDesireState = GameStates::gsWaitingForPlayers;
+	mCurrentState = PNGGameState::gsNoState;
+	mDesireState = PNGGameState::gsWaitingForPlayers;
 
 	FPNGBaseGameState* firstState = mHandlers.FindRef(mCurrentState);
 	firstState->StartState(GetWorld());
@@ -76,14 +77,14 @@ void APNGGameStateMain::ProcessStateMachine()
 		return;
 	}
 
-	GameStates currentStateType = GetState();
+	PNGGameState currentStateType = GetState();
 	FPNGBaseGameState* currentState = mHandlers.FindRef(currentStateType);
 
 	currentState->ProcessState(GetWorld());
 
 	if(currentState->IsReadyForExit())
 	{
-		TArray<GameStates> transitions = mTransitions.FindRef(currentStateType);
+		TArray<PNGGameState> transitions = mTransitions.FindRef(currentStateType);
 		for(auto transitionToSate : transitions)
 		{
 			FPNGBaseGameState* nextState = mHandlers.FindRef(transitionToSate);
@@ -92,24 +93,37 @@ void APNGGameStateMain::ProcessStateMachine()
 			{
 				UE_LOG(LogType, Log, TEXT("APNGGameStateMain::ProcessStateMachine FROM %d TO %d"), (uint8)mCurrentState, (uint8)transitionToSate);
 				currentState->EndState(GetWorld());
-				mCurrentState = transitionToSate;
+				SetState(transitionToSate);
 				nextState->StartState(GetWorld());
 
 				if(mDesireState == transitionToSate)
 				{
-					mDesireState = GameStates::gsNoState;
+					mDesireState = PNGGameState::gsNoState;
 				}
 
-				OnGameStateChanged.Broadcast(mCurrentState);
+				// Notify all about state change.
+				MulticastRPCNotifyStateChange(mCurrentState);
 				break;
 			}
 		}
 	}
 }
 
-void APNGGameStateMain::TrySwitchState(GameStates value)
+void APNGGameStateMain::TrySwitchState(PNGGameState value)
 {
 	mDesireState = value;
+}
+
+void APNGGameStateMain::MulticastRPCNotifyStateChange_Implementation(PNGGameState NewState)
+{
+	// First, lets update state value for our clients.
+	if (!GetWorld()->IsServer())
+	{
+		SetState(NewState);
+	}
+
+	// Now lets broadcast it for everybody.
+	OnGameStateChanged().Broadcast(NewState);
 }
 
 void APNGGameStateMain::UpdateFixedServerTimeSeconds(float DeltaTime)
@@ -136,7 +150,7 @@ void FPNGGSWaitingForPlayers::ProcessState(UWorld* World)
 
 bool FPNGGSStartingPlay::IsReadyForActivation(UWorld* World, APNGGameStateMain* GameStateActor) const
 {
-	return GameStateActor->GetState() == GameStates::gsWaitingForPlayers || GameStateActor->GetDesireState() == GameStates::gsStartingPlay;
+	return GameStateActor->GetState() == PNGGameState::gsWaitingForPlayers || GameStateActor->GetDesireState() == PNGGameState::gsStartingPlay;
 }
 
 void FPNGGSStartingPlay::StartState(UWorld* World)

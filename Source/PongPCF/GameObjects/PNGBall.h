@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "PNGBall.generated.h"
 
+class APNGGoalZone;
+
 UCLASS()
 class PONGPCF_API APNGBall : public AActor
 {
@@ -42,6 +44,12 @@ public:
 	void StopBallAtLocation(FVector Location);
 	void PushBallInRandomDirection();
 
+	DECLARE_EVENT_OneParam(APNGBall, FPNGBallHitGoalEvent, APNGGoalZone*)
+	FPNGBallHitGoalEvent& OnBallHitGoal() { return BallHitGoalEvent; }
+
+	DECLARE_EVENT_TwoParams(APNGBall, FPNGBallHitActorEvent, AActor*, FVector)
+	FPNGBallHitActorEvent& OnBallHitActor() { return BallHitActorEvent; }
+
 private:
 
 	void UpdateLocation();
@@ -56,6 +64,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Mesh, meta = (AllowPrivateAccess = "true"))
 	class UStaticMeshComponent* mSphereComp;
+
+	FPNGBallHitGoalEvent BallHitGoalEvent;
+	FPNGBallHitActorEvent BallHitActorEvent;
 
 	FPush mLastPush;
 };

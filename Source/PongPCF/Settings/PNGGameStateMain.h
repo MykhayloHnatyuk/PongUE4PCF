@@ -11,7 +11,7 @@
 struct FPNGBaseGameState;
 
 UENUM(BlueprintType)
-enum class GameStates : uint8
+enum class PNGGameState : uint8
 {
 	gsNoState				UMETA(DisplayName = "NoState"),
 	gsWaitingForPlayers		UMETA(DisplayName = "WaitingForPlayers"),
@@ -19,8 +19,6 @@ enum class GameStates : uint8
 	gsPlaying				UMETA(DisplayName = "Playing"),
 	gsExiting				UMETA(DisplayName = "Exiting")
 };
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPNGOnGameStateChanged, GameStates, NewState);
 
 UCLASS()
 class PONGPCF_API APNGGameStateMain : public AGameStateBase
@@ -31,8 +29,6 @@ public:
 
 	APNGGameStateMain(const FObjectInitializer& ObjectInitializer);
 	virtual ~APNGGameStateMain() = default;
-
-	FPNGOnGameStateChanged OnGameStateChanged;
 
 protected:
 
@@ -45,21 +41,31 @@ protected:
 
 public:
 
-	void TrySwitchState(GameStates value);
-	GameStates GetState() const { return mCurrentState; }
-	GameStates GetDesireState() const { return mDesireState; }
+	void TrySwitchState(PNGGameState value);
+	PNGGameState GetState() const { return mCurrentState; }
+	PNGGameState GetDesireState() const { return mDesireState; }
 
 	float GetFixedServerWorldTimeSeconds() const { return mFixedServerTimeSeconds; }
 
+	DECLARE_EVENT_OneParam(APNGGameStateMain, FPNGGameStateChangedEvent, PNGGameState)
+	FPNGGameStateChangedEvent& OnGameStateChanged() { return GameStateChangedEvent; }
+
 private:
+
+	void SetState(PNGGameState Value) { mCurrentState = Value; }
+
+	UFUNCTION(Reliable, NetMulticast)
+	void MulticastRPCNotifyStateChange(PNGGameState NewState);
 
 	void UpdateFixedServerTimeSeconds(float DeltaTime);
 
-	TMap<GameStates, FPNGBaseGameState*> mHandlers;
-	TMap<GameStates, TArray<GameStates>> mTransitions;
+	TMap<PNGGameState, FPNGBaseGameState*> mHandlers;
+	TMap<PNGGameState, TArray<PNGGameState>> mTransitions;
 
-	GameStates mCurrentState;
-	GameStates mDesireState;
+	PNGGameState mCurrentState;
+	PNGGameState mDesireState;
+
+	FPNGGameStateChangedEvent GameStateChangedEvent;
 
 	float mFixedServerTimeSeconds;
 };

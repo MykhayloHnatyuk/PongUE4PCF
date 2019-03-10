@@ -21,6 +21,10 @@ protected:
 
 	virtual void SetupInputComponent() override;
 
+public:
+
+	bool IsPlayerOne() const;
+
 private:
 
 	// Move to location on server. 

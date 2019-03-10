@@ -29,7 +29,6 @@ void APNGPawnMain::Tick(float DeltaTime)
 void APNGPawnMain::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
 }
 
 void APNGPawnMain::LimitMoveToLocation(FVector& OutTargetedLocation) const

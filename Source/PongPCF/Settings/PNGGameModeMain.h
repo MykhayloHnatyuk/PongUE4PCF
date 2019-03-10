@@ -8,6 +8,7 @@
 #include "PNGGameModeMain.generated.h"
 
 class APNGBall;
+class APNGGoalZone;
 
 UCLASS()
 class PONGPCF_API APNGGameModeMain : public AGameModeBase
@@ -26,7 +27,10 @@ class PONGPCF_API APNGGameModeMain : public AGameModeBase
 private:
 
 	UFUNCTION()
-	void OnGameStateChangedHandler(GameStates NewState);
+	void OnGameStateChangedHandler(PNGGameState NewState);
+
+	UFUNCTION()
+	void OnBallHitGoalHandler(APNGGoalZone* GoalZone);
 
 	UFUNCTION(Reliable, Server, WithValidation)
 	void ServerRPCSpawnBall();

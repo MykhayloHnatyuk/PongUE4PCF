@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Camera/CameraActor.h"
+#include "Settings/PNGGameStateMain.h"
 #include "PNGCameraActor.generated.h"
 
 UCLASS()
@@ -34,6 +35,14 @@ protected:
 	UCurveLinearColor* ColorCurve;
 
 private:
+
+	void BindBallHitActorEvent();
+
+	UFUNCTION()
+	void OnGameStateChangedHandler(PNGGameState NewState);
+
+	UFUNCTION()
+	void OnBallHitActorHandler(AActor* HitActor, FVector HitLocation);
 
 	float mColorUpdateSpeed;
 	float mColorAngle;

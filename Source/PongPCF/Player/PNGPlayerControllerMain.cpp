@@ -44,6 +44,11 @@ void APNGPlayerControllerMain::SetupInputComponent()
 	InputComponent->BindAxis(MOVE_UP_AXIS_NAME, this, &APNGPlayerControllerMain::MoveUpInput);
 }
 
+bool APNGPlayerControllerMain::IsPlayerOne() const
+{
+	return IsLocalPlayerController() && GetWorld()->IsServer();
+}
+
 bool APNGPlayerControllerMain::ServerRPCMoveTo_Validate(FVector NewLocation)
 {
 	return true;

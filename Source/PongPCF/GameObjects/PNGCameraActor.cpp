@@ -2,6 +2,8 @@
 
 #include "PNGCameraActor.h"
 #include "Engine.h"
+#include "Settings/PNGGameModeMain.h"
+#include "GameObjects/PNGBall.h"
 
 APNGCameraActor::APNGCameraActor(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -27,6 +29,12 @@ void APNGCameraActor::BeginPlay()
 			UE_LOG(LogType, Error, TEXT("APNGCameraActor::BeginPlay PlayerController not found!"));
 		}
 	}
+
+	APNGGameStateMain* gs = Cast<APNGGameStateMain>(GetWorld()->GetGameState());
+	gs->OnGameStateChanged().RemoveAll(this);
+	gs->OnGameStateChanged().AddUObject(this, &APNGCameraActor::OnGameStateChangedHandler);
+
+	BindBallHitActorEvent();
 }
 
 void APNGCameraActor::Tick(float DeltaTime)
@@ -47,5 +55,45 @@ void APNGCameraActor::UpdateColor(float DeltaTime)
 	
 	const FLinearColor color = ColorCurve->GetClampedLinearColorValue(mColorAngle);
 	GetCameraComponent()->PostProcessSettings.SceneColorTint = FLinearColor(color);
+}
+
+void APNGCameraActor::BindBallHitActorEvent()
+{
+	// Since the ball is created from GameMode on server,
+	// and we don't have GameMode on a client,
+	// and we don't have much actors on scene - lets find the ball by actor iteration.
+
+	UWorld* World = GetWorld();
+
+	for (TActorIterator<APNGBall> It(World); It; ++It)
+	{
+		APNGBall* Ball = *It;
+		Ball->OnBallHitActor().RemoveAll(this);
+		Ball->OnBallHitActor().AddUObject(this, &APNGCameraActor::OnBallHitActorHandler);
+
+		break;
+	}
+}
+
+void APNGCameraActor::OnGameStateChangedHandler(PNGGameState NewState)
+{
+	switch (NewState)
+	{
+	case PNGGameState::gsWaitingForPlayers:
+		break;
+	case PNGGameState::gsStartingPlay:
+		mColorUpdateSpeed = StartingPlayColorUpdateSpeed;
+		break;
+	case PNGGameState::gsPlaying:
+		mColorUpdateSpeed = DefaultColorUpdateSpeed;
+		break;
+	default:
+		break;
+	}
+}
+
+void APNGCameraActor::OnBallHitActorHandler(AActor* HitActor, FVector HitLocation)
+{
+	mColorAngle += HitColorUpdateStep;
 }
 

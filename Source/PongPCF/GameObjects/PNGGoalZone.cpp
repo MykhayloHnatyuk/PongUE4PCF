@@ -10,6 +10,12 @@ APNGGoalZone::APNGGoalZone()
 
 }
 
+bool APNGGoalZone::IsPlayerOneGoalZone() const
+{
+	// TODO: Find a better way to do it.
+	return GetActorLocation().Y < 0;
+}
+
 // Called when the game starts or when spawned
 void APNGGoalZone::BeginPlay()
 {

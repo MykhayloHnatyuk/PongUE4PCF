@@ -89,11 +89,13 @@ FVector APNGBall::GetLocationByTime(float Time) const
 #define PAWN_HIT_POINT_INFLUENCE_POWER 2.0f
 void APNGBall::OnBeginOverlap(UPrimitiveComponent * OverlappedComp, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
-	if (!GetWorld()->IsServer())
+	OnBallHitActor().Broadcast(OtherActor, SweepResult.ImpactPoint);
+
+	/*if (!GetWorld()->IsServer())
 	{
 		UE_LOG(LogType, Log, TEXT("APNGBall::OnBeginOverlap not server."));
 		return;
-	}
+	}*/
 
 	if (OtherActor != nullptr)
 	{
@@ -104,7 +106,7 @@ void APNGBall::OnBeginOverlap(UPrimitiveComponent * OverlappedComp, AActor * Oth
 
 		FVector newDirection = FVector::ZeroVector;
 
-		if(APNGPawnMain* pawn = Cast<APNGPawnMain>(OtherActor))
+		if(auto pawn = Cast<APNGPawnMain>(OtherActor))
 		{
 			const FVector hitPlaneNormal = pawn->GetActorForwardVector();
 			const FVector reflectedDirection = ReflectVector(mLastPush.Direction, hitPlaneNormal);
@@ -112,8 +114,9 @@ void APNGBall::OnBeginOverlap(UPrimitiveComponent * OverlappedComp, AActor * Oth
 			// Edit final direction based on a hit location just to make things more unpredictable for an other player.
 			newDirection = reflectedDirection + (GetActorLocation() - pawn->GetActorLocation()).GetSafeNormal() * PAWN_HIT_POINT_INFLUENCE_POWER;
 		}
-		else if (Cast<APNGGoalZone>(OtherActor))
+		else if (auto goal = Cast<APNGGoalZone>(OtherActor))
 		{
+			OnBallHitGoal().Broadcast(goal);
 		}
 		else
 		{
