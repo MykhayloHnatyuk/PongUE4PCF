@@ -67,7 +67,7 @@ void APNGGameStateMain::Initialization()
 	mTransitions.Add(PNGGameState::gsExiting, { PNGGameState::gsNoState });
 
 	mCurrentState = PNGGameState::gsNoState;
-	mDesireState = PNGGameState::gsWaitingForPlayers;
+	mDesireState = PNGGameState::gsNoState;
 
 	FPNGBaseGameState* firstState = mHandlers.FindRef(mCurrentState);
 	firstState->StartState(GetWorld());
@@ -125,7 +125,6 @@ void APNGGameStateMain::MulticastRPCNotifyStateChange_Implementation(PNGGameStat
 		SetState(NewState);
 	}
 
-
 	UE_LOG(LogType, Log, TEXT("%d APNGGameStateMain::MulticastRPCNotifyStateChange_Implementation NewState: %d"), GetWorld()->IsServer(), int(NewState));
 
 	// Now lets broadcast it for everybody.
@@ -145,7 +144,21 @@ void APNGGameStateMain::UpdateFixedServerTimeSeconds(float DeltaTime)
 
 void FPNGGSNoSate::StartState(UWorld* World)
 {
-	MarkExit(true);
+	Super::StartState(World);
+
+	bSkippedOneFrame = false;
+}
+
+void FPNGGSNoSate::ProcessState(UWorld* World)
+{
+	if(bSkippedOneFrame)
+	{
+		MarkExit(true);
+	}
+	else
+	{
+		bSkippedOneFrame = true;
+	}
 }
 
 void FPNGGSWaitingForPlayers::ProcessState(UWorld* World)

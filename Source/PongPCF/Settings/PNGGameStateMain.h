@@ -102,6 +102,12 @@ struct FPNGGSNoSate : public FPNGBaseGameState
 	virtual	~FPNGGSNoSate() override = default;
 
 	virtual void StartState(UWorld* World) override;
+
+	virtual void ProcessState(UWorld* World) override;
+
+private:
+
+	bool bSkippedOneFrame;
 };
 
 USTRUCT()
@@ -111,7 +117,7 @@ struct FPNGGSWaitingForPlayers : public FPNGBaseGameState
 
 	virtual	~FPNGGSWaitingForPlayers() override = default;
 
-	void ProcessState(UWorld* World) override;
+	virtual void ProcessState(UWorld* World) override;
 	
 	// Timer used to make delay before starting play.
 	float mStartTimer;
@@ -134,11 +140,11 @@ struct FPNGGSStartingPlay : public FPNGBaseGameState
 
 	virtual	~FPNGGSStartingPlay() override = default;
 
-	bool IsReadyForActivation(UWorld* World, APNGGameStateMain* GameStateActor) const override;
+	virtual bool IsReadyForActivation(UWorld* World, APNGGameStateMain* GameStateActor) const override;
 
-	void StartState(UWorld* World) override;
+	virtual void StartState(UWorld* World) override;
 
-	void ProcessState(UWorld* World) override;
+	virtual void ProcessState(UWorld* World) override;
 
 private:
 
@@ -153,7 +159,7 @@ struct FPNGGSPlaying : public FPNGBaseGameState
 
 	virtual	~FPNGGSPlaying() override = default;
 
-	void StartState(UWorld* World) override;
+	virtual void StartState(UWorld* World) override;
 };
 
 USTRUCT()
@@ -163,5 +169,5 @@ struct FPNGGSExiting : public FPNGBaseGameState
 
 	virtual	~FPNGGSExiting() override = default;
 
-	bool IsReadyForActivation(UWorld* World, APNGGameStateMain* GameStateActor) const override;
+	virtual bool IsReadyForActivation(UWorld* World, APNGGameStateMain* GameStateActor) const override;
 };
