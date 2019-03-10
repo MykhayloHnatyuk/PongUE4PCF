@@ -3,6 +3,7 @@
 #include "PNGGameStateMain.h"
 #include "GameFramework/PlayerState.h"
 #include "EngineGlobals.h"
+#include "Player/PNGPlayerState.h"
 #include "Runtime/Engine/Classes/Engine/Engine.h"
 
 APNGGameStateMain::APNGGameStateMain(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -53,12 +54,14 @@ void APNGGameStateMain::Initialization()
 
 	mHandlers.Add(PNGGameState::gsNoState, new FPNGGSNoSate());
 	mHandlers.Add(PNGGameState::gsWaitingForPlayers, new FPNGGSWaitingForPlayers());
+	mHandlers.Add(PNGGameState::gsSetupPlay, new FPNGGSSetupPlay());
 	mHandlers.Add(PNGGameState::gsStartingPlay, new FPNGGSStartingPlay());
 	mHandlers.Add(PNGGameState::gsPlaying, new FPNGGSPlaying());
 	mHandlers.Add(PNGGameState::gsExiting, new FPNGGSExiting());
 
 	mTransitions.Add(PNGGameState::gsNoState, { PNGGameState::gsWaitingForPlayers });
-	mTransitions.Add(PNGGameState::gsWaitingForPlayers, { PNGGameState::gsStartingPlay });
+	mTransitions.Add(PNGGameState::gsWaitingForPlayers, { PNGGameState::gsSetupPlay });
+	mTransitions.Add(PNGGameState::gsSetupPlay, { PNGGameState::gsStartingPlay });
 	mTransitions.Add(PNGGameState::gsStartingPlay, { PNGGameState::gsPlaying, PNGGameState::gsExiting });
 	mTransitions.Add(PNGGameState::gsPlaying, { PNGGameState::gsStartingPlay, PNGGameState::gsExiting });
 	mTransitions.Add(PNGGameState::gsExiting, { PNGGameState::gsNoState });
@@ -122,6 +125,9 @@ void APNGGameStateMain::MulticastRPCNotifyStateChange_Implementation(PNGGameStat
 		SetState(NewState);
 	}
 
+
+	UE_LOG(LogType, Log, TEXT("%d APNGGameStateMain::MulticastRPCNotifyStateChange_Implementation NewState: %d"), GetWorld()->IsServer(), int(NewState));
+
 	// Now lets broadcast it for everybody.
 	OnGameStateChanged().Broadcast(NewState);
 }
@@ -144,13 +150,37 @@ void FPNGGSNoSate::StartState(UWorld* World)
 
 void FPNGGSWaitingForPlayers::ProcessState(UWorld* World)
 {
-	bool numOfPlayersIsEnough = World->GetGameState()->PlayerArray.Num() == NUM_OF_NEEDED_PLAYERS_ONLINE;
-	MarkExit(numOfPlayersIsEnough);
+	auto players = World->GetGameState()->PlayerArray;
+	
+	bool bNumOfPlayersIsEnough = players.Num() == NUM_OF_NEEDED_PLAYERS_ONLINE;
+	bool bAllPlayersAreReady = true;
+	
+	if (bNumOfPlayersIsEnough)
+	{
+		for (auto p : players)
+		{
+			auto player = Cast<APNGPlayerState>(p);
+			ensure(player);
+
+			if(!player->bIsReady)
+			{
+				bAllPlayersAreReady = false;
+				break;
+			}
+		}
+	}
+	
+	MarkExit(bNumOfPlayersIsEnough && bAllPlayersAreReady);
+}
+
+void FPNGGSSetupPlay::StartState(UWorld* World)
+{
+	MarkExit(true);
 }
 
 bool FPNGGSStartingPlay::IsReadyForActivation(UWorld* World, APNGGameStateMain* GameStateActor) const
 {
-	return GameStateActor->GetState() == PNGGameState::gsWaitingForPlayers || GameStateActor->GetDesireState() == PNGGameState::gsStartingPlay;
+	return GameStateActor->GetState() == PNGGameState::gsSetupPlay || GameStateActor->GetDesiredState() == PNGGameState::gsStartingPlay;
 }
 
 void FPNGGSStartingPlay::StartState(UWorld* World)
@@ -175,11 +205,6 @@ void FPNGGSPlaying::StartState(UWorld* World)
 {
 	// We are ready to exit whenever any other state is needed.
 	MarkExit(true);
-}
-
-void FPNGGSPlaying::ProcessState(UWorld* World)
-{
-
 }
 
 bool FPNGGSExiting::IsReadyForActivation(UWorld* World, APNGGameStateMain* GameStateActor) const

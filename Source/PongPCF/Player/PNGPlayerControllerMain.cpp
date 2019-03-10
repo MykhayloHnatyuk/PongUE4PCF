@@ -2,10 +2,18 @@
 
 #include "PNGPlayerControllerMain.h"
 #include "PNGPawnMain.h"
+#include "PNGPlayerState.h"
 
 void APNGPlayerControllerMain::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// We do it in order to be sure that all players are ready receive network updates,
+	// before we will transition to the next game state.
+	if(IsLocalPlayerController())
+	{
+		ServerRPCSetReadyState();
+	}
 }
 
 #define MOVE_THRESHOLD 0.01f
@@ -62,6 +70,18 @@ void APNGPlayerControllerMain::ServerRPCMoveTo_Implementation(FVector NewLocatio
 void APNGPlayerControllerMain::MulticastRPCMoveTo_Implementation(FVector NewLocation)
 {
 	MoveTo(NewLocation);
+}
+
+void APNGPlayerControllerMain::ServerRPCSetReadyState_Implementation()
+{
+	APNGPlayerState* state = GetPlayerState<APNGPlayerState>();
+	ensure(state);
+	state->bIsReady = true;
+}
+
+bool APNGPlayerControllerMain::ServerRPCSetReadyState_Validate()
+{
+	return true;
 }
 
 void APNGPlayerControllerMain::MoveTo(FVector NewLocation)

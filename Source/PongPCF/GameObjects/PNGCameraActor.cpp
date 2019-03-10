@@ -33,8 +33,6 @@ void APNGCameraActor::BeginPlay()
 	APNGGameStateMain* gs = Cast<APNGGameStateMain>(GetWorld()->GetGameState());
 	gs->OnGameStateChanged().RemoveAll(this);
 	gs->OnGameStateChanged().AddUObject(this, &APNGCameraActor::OnGameStateChangedHandler);
-
-	BindBallHitActorEvent();
 }
 
 void APNGCameraActor::Tick(float DeltaTime)
@@ -59,27 +57,33 @@ void APNGCameraActor::UpdateColor(float DeltaTime)
 
 void APNGCameraActor::BindBallHitActorEvent()
 {
+	UE_LOG(LogType, Log, TEXT("%d APNGCameraActor::BindBallHitActorEvent"), GetWorld()->IsServer());
 	// Since the ball is created from GameMode on server,
 	// and we don't have GameMode on a client,
 	// and we don't have much actors on scene - lets find the ball by actor iteration.
 
 	UWorld* World = GetWorld();
+	bool ballWasFound = false;
 
 	for (TActorIterator<APNGBall> It(World); It; ++It)
 	{
 		APNGBall* Ball = *It;
 		Ball->OnBallHitActor().RemoveAll(this);
 		Ball->OnBallHitActor().AddUObject(this, &APNGCameraActor::OnBallHitActorHandler);
+		ballWasFound = true;
 
 		break;
 	}
+
+	ensure(ballWasFound);
 }
 
 void APNGCameraActor::OnGameStateChangedHandler(PNGGameState NewState)
 {
 	switch (NewState)
 	{
-	case PNGGameState::gsWaitingForPlayers:
+	case PNGGameState::gsSetupPlay:
+		BindBallHitActorEvent();
 		break;
 	case PNGGameState::gsStartingPlay:
 		mColorUpdateSpeed = StartingPlayColorUpdateSpeed;

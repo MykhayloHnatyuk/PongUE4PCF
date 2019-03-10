@@ -91,11 +91,11 @@ void APNGBall::OnBeginOverlap(UPrimitiveComponent * OverlappedComp, AActor * Oth
 {
 	OnBallHitActor().Broadcast(OtherActor, SweepResult.ImpactPoint);
 
-	/*if (!GetWorld()->IsServer())
+	if (!GetWorld()->IsServer())
 	{
 		UE_LOG(LogType, Log, TEXT("APNGBall::OnBeginOverlap not server."));
 		return;
-	}*/
+	}
 
 	if (OtherActor != nullptr)
 	{

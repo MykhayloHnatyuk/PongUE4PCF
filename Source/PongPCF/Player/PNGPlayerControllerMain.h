@@ -27,6 +27,9 @@ public:
 
 private:
 
+	UFUNCTION(Reliable, Server, WithValidation)
+	void ServerRPCSetReadyState();
+
 	// Move to location on server. 
 	// No need to check if we can move to this position on a server, 
 	// since we have no dynamic geometry that can influence us.

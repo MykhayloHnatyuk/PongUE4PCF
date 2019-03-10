@@ -15,6 +15,7 @@ enum class PNGGameState : uint8
 {
 	gsNoState				UMETA(DisplayName = "NoState"),
 	gsWaitingForPlayers		UMETA(DisplayName = "WaitingForPlayers"),
+	gsSetupPlay				UMETA(DisplayName = "SetupPlay"),
 	gsStartingPlay			UMETA(DisplayName = "StartingPlay"),
 	gsPlaying				UMETA(DisplayName = "Playing"),
 	gsExiting				UMETA(DisplayName = "Exiting")
@@ -43,7 +44,7 @@ public:
 
 	void TrySwitchState(PNGGameState value);
 	PNGGameState GetState() const { return mCurrentState; }
-	PNGGameState GetDesireState() const { return mDesireState; }
+	PNGGameState GetDesiredState() const { return mDesireState; }
 
 	float GetFixedServerWorldTimeSeconds() const { return mFixedServerTimeSeconds; }
 
@@ -111,6 +112,19 @@ struct FPNGGSWaitingForPlayers : public FPNGBaseGameState
 	virtual	~FPNGGSWaitingForPlayers() override = default;
 
 	void ProcessState(UWorld* World) override;
+	
+	// Timer used to make delay before starting play.
+	float mStartTimer;
+};
+
+USTRUCT()
+struct FPNGGSSetupPlay : public FPNGBaseGameState
+{
+	GENERATED_USTRUCT_BODY()
+
+	virtual	~FPNGGSSetupPlay() override = default;
+
+	virtual void StartState(UWorld* World) override;
 };
 
 USTRUCT()
@@ -140,8 +154,6 @@ struct FPNGGSPlaying : public FPNGBaseGameState
 	virtual	~FPNGGSPlaying() override = default;
 
 	void StartState(UWorld* World) override;
-
-	void ProcessState(UWorld* World) override;
 };
 
 USTRUCT()

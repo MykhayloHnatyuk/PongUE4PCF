@@ -3,14 +3,16 @@
 #include "PNGGlobalDefines.h"
 #include "Settings/PNGGameStateMain.h"
 
-float GetFixedServerWorldTimeSeconds(UWorld* Wold)
+float GetFixedServerWorldTimeSeconds(UWorld* World)
 {
 	float result = 0.0f;
 
-	if(Wold->IsValidLowLevel())
+	if(World->IsValidLowLevel())
 	{
-		const APNGGameStateMain* gs = Cast<APNGGameStateMain>(Wold->GetGameState());
-		result = gs->GetFixedServerWorldTimeSeconds();
+		if(auto gs = Cast<APNGGameStateMain>(World->GetGameState()))
+		{
+			result = gs->GetFixedServerWorldTimeSeconds();
+		}
 	}	
 
 	return result;
