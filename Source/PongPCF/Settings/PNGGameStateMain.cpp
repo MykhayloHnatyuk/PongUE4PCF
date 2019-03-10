@@ -117,6 +117,11 @@ void APNGGameStateMain::TrySwitchState(PNGGameState value)
 	mDesireState = value;
 }
 
+void APNGGameStateMain::UpdateGameScore(int Player1Score, int Player2Score)
+{
+	MulticastRPCNotifyScoreChange(Player1Score, Player2Score);
+}
+
 void APNGGameStateMain::MulticastRPCNotifyStateChange_Implementation(PNGGameState NewState)
 {
 	// First, lets update state value for our clients.
@@ -129,6 +134,12 @@ void APNGGameStateMain::MulticastRPCNotifyStateChange_Implementation(PNGGameStat
 
 	// Now lets broadcast it for everybody.
 	OnGameStateChanged().Broadcast(NewState);
+}
+
+void APNGGameStateMain::MulticastRPCNotifyScoreChange_Implementation(int Player1Score, int Player2Score)
+{
+	UE_LOG(LogType, Log, TEXT("%d APNGGameStateMain::MulticastRPCNotifyScoreChange_Implementation %d %d"), GetWorld()->IsServer(), Player1Score, Player2Score);
+	OnGameScoreChanged().Broadcast(Player1Score, Player2Score);
 }
 
 void APNGGameStateMain::UpdateFixedServerTimeSeconds(float DeltaTime)
@@ -153,7 +164,7 @@ void FPNGGSNoSate::ProcessState(UWorld* World)
 {
 	if(bSkippedOneFrame)
 	{
-		MarkExit(true);
+		MarkExit(bSkippedOneFrame);
 	}
 	else
 	{

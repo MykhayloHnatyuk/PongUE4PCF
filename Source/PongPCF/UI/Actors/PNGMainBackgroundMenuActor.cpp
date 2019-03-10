@@ -4,6 +4,8 @@
 #include "PNGMainBackgroundWidget.h"
 #include "Settings/PNGGameModeMain.h"
 #include "Components/WidgetComponent.h"
+#include "GameFramework/PlayerController.h"
+#include "Engine.h"
 
 void APNGMainBackgroundMenuActor::BeginPlay()
 {
@@ -12,6 +14,8 @@ void APNGMainBackgroundMenuActor::BeginPlay()
 	APNGGameStateMain* gs = Cast<APNGGameStateMain>(GetWorld()->GetGameState());
 	gs->OnGameStateChanged().RemoveAll(this);
 	gs->OnGameStateChanged().AddUObject(this, &APNGMainBackgroundMenuActor::OnGameStateChangedHandler);
+	gs->OnGameScoreChanged().RemoveAll(this);
+	gs->OnGameScoreChanged().AddUObject(this, &APNGMainBackgroundMenuActor::OnGameScoreChangedHandler);
 }
 
 void APNGMainBackgroundMenuActor::InitializeBP(UWidgetComponent* MainWidgetComponent)
@@ -40,7 +44,11 @@ void APNGMainBackgroundMenuActor::OnGameStateChangedHandler(PNGGameState NewStat
 		break;
 	case PNGGameState::gsPlaying:
 	{
-		int leftToScore = 7;
+		// Calculate how much our local player has to score in order to win.
+		auto pc = UGameplayStatics::GetPlayerController(this, 0);
+		int currentScore = pc->PlayerState->Score;
+		int leftToScore = TARGET_GAME_SCORE_TO_WIN - currentScore;
+
 		Text = *FString::Printf(TEXT(STATUS_TEXT_PLAYING), leftToScore);
 	}
 		break;
@@ -52,7 +60,7 @@ void APNGMainBackgroundMenuActor::OnGameStateChangedHandler(PNGGameState NewStat
 	mMainMenuWidget->UpdateStatus(Text);
 }
 
-void APNGMainBackgroundMenuActor::OnScoreChangedHandler(int Player1Score, int Player2Score)
+void APNGMainBackgroundMenuActor::OnGameScoreChangedHandler(int Player1Score, int Player2Score)
 {
 	ensure(mMainMenuWidget);
 

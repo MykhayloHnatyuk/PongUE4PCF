@@ -10,6 +10,8 @@
 
 #define DEFAULT_BALL_LOCATION FVector::ZeroVector
 
+#pragma optimize ("", off)
+
 APNGGameModeMain::APNGGameModeMain(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	
@@ -78,19 +80,27 @@ void APNGGameModeMain::OnBallHitGoalHandler(APNGGoalZone* GoalZone)
 
 	if(gs->GetState() != PNGGameState::gsPlaying)
 	{
+		// Just in case if somehow end up here twice during the same play.
 		// We have already counted this score.
 		return;
 	}
 
-	bool playerOneScored = !GoalZone->IsPlayerOneGoalZone();
+	bool bPlayerOneScored = !GoalZone->IsPlayerOneGoalZone();
+	int player1Score = 0;
+	int player2Score = 0;
 
 	for(auto player : gs->PlayerArray)
 	{
 		auto controller = Cast<APNGPlayerControllerMain>(player->GetOwner());
-		player->Score += controller->IsPlayerOne() && playerOneScored;
+		player->Score += controller->IsPlayerOne() == bPlayerOneScored;
+		controller->IsPlayerOne() ? player1Score = player->Score : player2Score = player->Score;
 	}
 
-	// Restart play.
+
+	UE_LOG(LogType, Log, TEXT("%d APNGGameModeMain::OnBallHitGoalHandler %d %d"), GetWorld()->IsServer(), player1Score, player2Score);
+
+	gs->UpdateGameScore(player1Score, player2Score);
+	
 	gs->TrySwitchState(PNGGameState::gsStartingPlay);
 }
 
@@ -116,3 +126,5 @@ bool APNGGameModeMain::ServerRPCSpawnBall_Validate()
 {
 	return true;
 }
+
+#pragma optimize ("", on)

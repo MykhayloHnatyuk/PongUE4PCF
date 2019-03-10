@@ -51,12 +51,20 @@ public:
 	DECLARE_EVENT_OneParam(APNGGameStateMain, FPNGGameStateChangedEvent, PNGGameState)
 	FPNGGameStateChangedEvent& OnGameStateChanged() { return GameStateChangedEvent; }
 
+	DECLARE_EVENT_TwoParams(APNGGameStateMain, FPNGGameScoreChangedEvent, int, int)
+	FPNGGameScoreChangedEvent& OnGameScoreChanged() { return GameScoreChangedEvent; }
+
+	void UpdateGameScore(int Player1Score, int Player2Score);
+
 private:
 
 	void SetState(PNGGameState Value) { mCurrentState = Value; }
 
 	UFUNCTION(Reliable, NetMulticast)
 	void MulticastRPCNotifyStateChange(PNGGameState NewState);
+
+	UFUNCTION(Reliable, NetMulticast)
+	void MulticastRPCNotifyScoreChange(int Player1Score, int Player2Score);
 
 	void UpdateFixedServerTimeSeconds(float DeltaTime);
 
@@ -67,6 +75,7 @@ private:
 	PNGGameState mDesireState;
 
 	FPNGGameStateChangedEvent GameStateChangedEvent;
+	FPNGGameScoreChangedEvent GameScoreChangedEvent;
 
 	float mFixedServerTimeSeconds;
 };

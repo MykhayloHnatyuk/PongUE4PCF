@@ -26,7 +26,7 @@ private:
 	UFUNCTION()
 	void OnGameStateChangedHandler(PNGGameState NewState);
 	UFUNCTION()
-	void OnScoreChangedHandler(int Player1Score, int Player2Score);
+	void OnGameScoreChangedHandler(int Player1Score, int Player2Score);
 
 	class UPNGMainBackgroundWidget* mMainMenuWidget;
 };
