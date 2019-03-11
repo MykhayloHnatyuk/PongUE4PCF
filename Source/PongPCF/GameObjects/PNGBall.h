@@ -8,31 +8,52 @@
 
 class APNGGoalZone;
 
+USTRUCT()
+struct FPush
+{
+	GENERATED_USTRUCT_BODY()
+
+	FPush()
+	{
+		StartLocation = FVector::ZeroVector;
+		Direction = FVector::ZeroVector;
+		Time = 0.0f;
+		Speed = 0.0f;
+	}
+
+	FPush(const FVector& StartLocation, float Time) : FPush()
+	{
+		this->StartLocation = StartLocation;
+		this->Time = Time;
+	}
+
+	UPROPERTY()
+	FVector StartLocation;
+	UPROPERTY()
+	FVector Direction;
+	UPROPERTY()
+	float Time;
+	UPROPERTY()
+	float Speed;
+};
+
 UCLASS()
 class PONGPCF_API APNGBall : public AActor
 {
-	struct FPush
-	{
-		FPush()
-		{
-			StartLocation = FVector::ZeroVector;
-			Direction = FVector::ZeroVector;
-			Time = 0.0f;
-		}
-
-		FVector StartLocation;
-		FVector Direction;
-		float Time;
-	};
-
 	GENERATED_BODY()
 	
 public:	
 
 	APNGBall();
 
+	// Default speed used at the start of each play.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pong|Ball Stats")
-	float Speed;
+	float InitialSpeed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pong|Ball Stats")
+	float MaxSpeed;
+	// Defines how speed will be increased (when pawn hits a ball) in percentage.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pong|Ball Stats")
+	float SpeedIncreasePrcntg;
 
 protected:
 
@@ -60,7 +81,7 @@ private:
 	void OnBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION(Reliable, NetMulticast)
-	void MulticastRPCUpdatePushData(FVector Start, FVector Direction, float Time);
+	void MulticastRPCUpdatePushData(FPush Push);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Mesh, meta = (AllowPrivateAccess = "true"))
 	class UStaticMeshComponent* mSphereComp;
@@ -68,5 +89,6 @@ private:
 	FPNGBallHitGoalEvent BallHitGoalEvent;
 	FPNGBallHitActorEvent BallHitActorEvent;
 
+	UPROPERTY()
 	FPush mLastPush;
 };

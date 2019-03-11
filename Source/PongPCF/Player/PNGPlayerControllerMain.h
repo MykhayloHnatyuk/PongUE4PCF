@@ -31,7 +31,7 @@ public:
 private:
 
 	UFUNCTION(Reliable, Server, WithValidation)
-	void ServerRPCSetReadyState();
+	void ServerRPCIntializeStateData();
 
 	// Move to location on server. 
 	// No need to check if we can move to this position on a server, 

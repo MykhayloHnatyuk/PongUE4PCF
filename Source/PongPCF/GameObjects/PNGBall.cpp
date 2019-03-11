@@ -10,6 +10,9 @@
 #include "PNGGoalZone.h"
 #include "Player/PNGPawnMain.h"
 
+
+#pragma optimize ("", off)
+
 #define SPHERE_COMP_NAME "Sphere"
 APNGBall::APNGBall()
 {
@@ -40,8 +43,8 @@ void APNGBall::StopBallAtLocation(FVector Location)
 		return;
 	}
 
-	float serverTime = GetFixedServerTime();
-	MulticastRPCUpdatePushData(Location, FVector::ZeroVector, serverTime);
+	FPush push = FPush(Location, GetFixedServerTime());
+	MulticastRPCUpdatePushData(push);
 }
 
 #define RANDOM_DIRECTION_POWER FVector(1.0f, 1.0f, 0.0f)
@@ -53,7 +56,7 @@ void APNGBall::PushBallInRandomDirection()
 		return;
 	}
 
-	const FVector& currLocation = GetActorLocation();
+	FPush push = FPush(GetActorLocation(), GetFixedServerTime());
 
 	// Create random direction for initial push,
 	// and let's make sure it won't be too vertical.
@@ -63,9 +66,11 @@ void APNGBall::PushBallInRandomDirection()
 		randDirection = FVector(randDirection.Y, randDirection.X, 0);
 	}
 
-	float serverTime = GetFixedServerTime();
+	push.Direction = randDirection;
+	// Update speed to default at every initial push.
+	push.Speed = InitialSpeed;
 
-	MulticastRPCUpdatePushData(currLocation, randDirection, serverTime);
+	MulticastRPCUpdatePushData(push);
 }
 
 void APNGBall::UpdateLocation()
@@ -86,7 +91,7 @@ FVector APNGBall::GetLocationByTime(float Time) const
 {
 	FVector result = mLastPush.StartLocation;
 	float timePassed = Time - mLastPush.Time;
-	result += mLastPush.Direction * Speed * timePassed;
+	result += mLastPush.Direction * mLastPush.Speed * timePassed;
 
 	return result;
 }
@@ -98,18 +103,26 @@ void APNGBall::OnBeginOverlap(UPrimitiveComponent * OverlappedComp, AActor * Oth
 
 	if (!GetWorld()->IsServer())
 	{
-		UE_LOG(LogType, Log, TEXT("APNGBall::OnBeginOverlap not server."));
 		return;
 	}
 
+
 	if (OtherActor != nullptr)
 	{
+		// Initialize new push.
+		FPush newPush = FPush(GetActorLocation(), GetFixedServerTime());
+		// We might change Speed later.
+		newPush.Speed = mLastPush.Speed;
+
+		UE_LOG(LogType, Log, TEXT("APNGBall::OnBeginOverlap  Time: %f  Loc: %s  HitNormal: %s"), newPush.Time, *newPush.StartLocation.ToString(), *SweepResult.Normal.ToString());
+
+		// Now let's, calculate new direction.
+		FVector newDirection = FVector::ZeroVector;
+
 		auto ReflectVector = [](const FVector& InVector, const FVector& Normal) -> FVector
 		{
 			return InVector - FVector::DotProduct(Normal, InVector) * Normal * 2;
 		};
-
-		FVector newDirection = FVector::ZeroVector;
 
 		if(auto pawn = Cast<APNGPawnMain>(OtherActor))
 		{
@@ -118,6 +131,9 @@ void APNGBall::OnBeginOverlap(UPrimitiveComponent * OverlappedComp, AActor * Oth
 			
 			// Edit final direction based on a hit location just to make things more unpredictable for an other player.
 			newDirection = reflectedDirection + (GetActorLocation() - pawn->GetActorLocation()).GetSafeNormal() * PAWN_HIT_POINT_INFLUENCE_POWER;
+			
+			// Let's increase speed after each Pawn hit.
+			newPush.Speed = FMath::Clamp(mLastPush.Speed + mLastPush.Speed * (SpeedIncreasePrcntg / 100.0f), InitialSpeed, MaxSpeed);
 		}
 		else if (auto goal = Cast<APNGGoalZone>(OtherActor))
 		{
@@ -129,18 +145,23 @@ void APNGBall::OnBeginOverlap(UPrimitiveComponent * OverlappedComp, AActor * Oth
 			newDirection = ReflectVector(mLastPush.Direction, hitPlaneNormal);
 		}
 
-		float serverTime = GetFixedServerTime();
-
-		// Just to make that we will never move out of 2D space.
+		// Just to make sure that we will never move out of 2D space.
 		newDirection *= FVector(1, 1, 0);
+		newPush.Direction = newDirection.GetSafeNormal();
 
-		MulticastRPCUpdatePushData(GetActorLocation(), newDirection.GetSafeNormal(), serverTime);
+
+		UE_LOG(LogType, Log, TEXT("APNGBall::OnBeginOverlap  NewLoc: %s  NewDir: %s"), *newPush.StartLocation.ToString(), *mLastPush.Direction.ToString());
+
+		MulticastRPCUpdatePushData(newPush);
 	}
 }
 
-void APNGBall::MulticastRPCUpdatePushData_Implementation(FVector Start, FVector Direction, float Time)
+void APNGBall::MulticastRPCUpdatePushData_Implementation(FPush Push)
 {
-	mLastPush.StartLocation = Start;
-	mLastPush.Direction = Direction.GetSafeNormal();
-	mLastPush.Time = Time;
+	mLastPush.StartLocation = Push.StartLocation;
+	mLastPush.Direction = Push.Direction.GetSafeNormal();
+	mLastPush.Time = Push.Time;
+	mLastPush.Speed = Push.Speed;
 }
+
+#pragma optimize ("", on)

@@ -97,7 +97,6 @@ void APNGGameStateMain::ProcessStateMachine()
 
 			if(nextState->IsReadyForActivation(GetWorld(), this))
 			{
-				UE_LOG(LogType, Log, TEXT("APNGGameStateMain::ProcessStateMachine FROM %d TO %d"), (uint8)mCurrentState, (uint8)transitionToSate);
 				currentState->EndState(GetWorld());
 				SetState(transitionToSate);
 				nextState->StartState(GetWorld());
@@ -263,7 +262,7 @@ void FPNGGSFinished::StartState(UWorld* World)
 	mRestartTimer = 0.0f;
 }
 
-#define TIME_TO_WAIT_BEFORE_RESTART 5
+#define TIME_TO_WAIT_BEFORE_RESTART 4
 void FPNGGSFinished::ProcessState(UWorld* World)
 {
 	mRestartTimer += World->GetDeltaSeconds();

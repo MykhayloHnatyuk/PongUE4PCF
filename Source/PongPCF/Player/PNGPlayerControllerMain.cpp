@@ -9,14 +9,12 @@ void APNGPlayerControllerMain::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// We do it in order to be sure that all players are ready receive network updates,
-	// before we will transition to the next game state.
 	if(IsLocalPlayerController())
 	{
-		ServerRPCSetReadyState();
+ 		// Let's init some player state data on a server.
+ 		// Game state will not proceed until it will be initialized.
+		ServerRPCIntializeStateData();
 	}
-
-	GetPNGPlayerState()->bIsPlayerOne = IsPlayerOne();
 }
 
 #define MOVE_THRESHOLD 0.01f
@@ -82,12 +80,14 @@ void APNGPlayerControllerMain::MulticastRPCMoveTo_Implementation(FVector NewLoca
 	MoveTo(NewLocation);
 }
 
-void APNGPlayerControllerMain::ServerRPCSetReadyState_Implementation()
+void APNGPlayerControllerMain::ServerRPCIntializeStateData_Implementation()
 {
-	GetPNGPlayerState()->bIsReady = true;
+	auto state = GetPNGPlayerState();
+	state->bIsPlayerOne = IsPlayerOne();
+	state->bIsReady = true; 
 }
 
-bool APNGPlayerControllerMain::ServerRPCSetReadyState_Validate()
+bool APNGPlayerControllerMain::ServerRPCIntializeStateData_Validate()
 {
 	return true;
 }
