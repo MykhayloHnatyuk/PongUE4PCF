@@ -16,6 +16,7 @@ class PONGPCF_API APNGPlayerStart : public APlayerStart
 	
 public:
 	
+	// If this spawn point was reserved for Player#1 only.
 	bool IsGoodForPlayerOne() const { return IsReservedForPlayerOne; }
 
 protected:

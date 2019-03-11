@@ -57,7 +57,6 @@ void APNGCameraActor::UpdateColor(float DeltaTime)
 
 void APNGCameraActor::BindBallHitActorEvent()
 {
-	UE_LOG(LogType, Log, TEXT("%d APNGCameraActor::BindBallHitActorEvent"), GetWorld()->IsServer());
 	// Since the ball is created from GameMode on server,
 	// and we don't have GameMode on a client,
 	// and we don't have much actors on scene - lets find the ball by actor iteration.
@@ -90,6 +89,9 @@ void APNGCameraActor::OnGameStateChangedHandler(PNGGameState NewState)
 		break;
 	case PNGGameState::gsPlaying:
 		mColorUpdateSpeed = DefaultColorUpdateSpeed;
+		break;
+	case PNGGameState::gsFinished:
+		mColorUpdateSpeed = PlayFinishedColorUpdateSpeed;
 		break;
 	default:
 		break;

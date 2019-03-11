@@ -10,8 +10,6 @@
 
 #define DEFAULT_BALL_LOCATION FVector::ZeroVector
 
-#pragma optimize ("", off)
-
 APNGGameModeMain::APNGGameModeMain(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	
@@ -29,10 +27,10 @@ void APNGGameModeMain::BeginPlay()
 }
 
 AActor* APNGGameModeMain::ChoosePlayerStart_Implementation(AController* Player)
-{
+{	
 	AActor* FoundPlayerStart = nullptr;
 	UWorld* World = GetWorld();
-	APNGPlayerControllerMain* pngPlayer = Cast<APNGPlayerControllerMain>(Player);
+	const APNGPlayerControllerMain* pngPlayer = Cast<APNGPlayerControllerMain>(Player);
 	ensure(pngPlayer);
 
 	for (TActorIterator<APNGPlayerStart> It(World); It; ++It)
@@ -65,6 +63,7 @@ void APNGGameModeMain::OnGameStateChangedHandler(PNGGameState NewState)
 		mBall->StopBallAtLocation(DEFAULT_BALL_LOCATION);
 		break;
 	case PNGGameState::gsPlaying:
+		// Game should be started. Let's kick a ball.
 		mBall->PushBallInRandomDirection();
 		break;
 	case PNGGameState::gsExiting:
@@ -78,7 +77,7 @@ void APNGGameModeMain::OnBallHitGoalHandler(APNGGoalZone* GoalZone)
 {
 	APNGGameStateMain* gs = Cast<APNGGameStateMain>(GetWorld()->GetGameState());
 
-	if(gs->GetState() != PNGGameState::gsPlaying)
+	if(gs->GetCurrentState() != PNGGameState::gsPlaying)
 	{
 		// Just in case if somehow end up here twice during the same play.
 		// We have already counted this score.
@@ -89,6 +88,7 @@ void APNGGameModeMain::OnBallHitGoalHandler(APNGGoalZone* GoalZone)
 	int player1Score = 0;
 	int player2Score = 0;
 
+	// Calculate new scores.
 	for(auto player : gs->PlayerArray)
 	{
 		auto controller = Cast<APNGPlayerControllerMain>(player->GetOwner());
@@ -96,6 +96,7 @@ void APNGGameModeMain::OnBallHitGoalHandler(APNGGoalZone* GoalZone)
 		controller->IsPlayerOne() ? player1Score = player->Score : player2Score = player->Score;
 	}
 
+	// Update score for everybody.
 	gs->UpdateGameScore(player1Score, player2Score);
 	
 	if(FMath::Max(player1Score, player2Score) >= TARGET_GAME_SCORE_TO_WIN)
@@ -132,5 +133,3 @@ bool APNGGameModeMain::ServerRPCSpawnBall_Validate()
 {
 	return true;
 }
-
-#pragma optimize ("", on)

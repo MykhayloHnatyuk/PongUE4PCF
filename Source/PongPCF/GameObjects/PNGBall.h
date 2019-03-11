@@ -46,6 +46,11 @@ public:
 
 	APNGBall();
 
+protected:
+
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
+
 	// Default speed used at the start of each play.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pong|Ball Stats")
 	float InitialSpeed;
@@ -55,19 +60,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pong|Ball Stats")
 	float SpeedIncreasePrcntg;
 
-protected:
-
-	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaTime) override;
-
 public:
 
 	void StopBallAtLocation(FVector Location);
+	// Used for initial push when we start new play.
 	void PushBallInRandomDirection();
 
+	// When ball overlaps any goal zone.
 	DECLARE_EVENT_OneParam(APNGBall, FPNGBallHitGoalEvent, APNGGoalZone*)
 	FPNGBallHitGoalEvent& OnBallHitGoal() { return BallHitGoalEvent; }
 
+	// When ball overlaps any actor.
 	DECLARE_EVENT_TwoParams(APNGBall, FPNGBallHitActorEvent, AActor*, FVector)
 	FPNGBallHitActorEvent& OnBallHitActor() { return BallHitActorEvent; }
 
@@ -75,6 +78,7 @@ private:
 
 	void UpdateLocation();
 
+	// Returns location calculated by time from last FPush data (last direction change).
 	FVector GetLocationByTime(float Time) const;
 
 	UFUNCTION()

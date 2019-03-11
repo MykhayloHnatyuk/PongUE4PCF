@@ -4,8 +4,6 @@
 #include "Engine.h"
 #include "UI/PNGLobbyWidget.h"
 
-#define HOST_COMMAND "open Main?listen"
-
 void APNGGameModeLobby::BeginPlay()
 {
 	Super::BeginPlay();
@@ -16,6 +14,7 @@ void APNGGameModeLobby::BeginPlay()
 	}
 }
 
+#define HOST_COMMAND "open Main?listen"
 void APNGGameModeLobby::HostGame()
 {
 	APlayerController* playerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);

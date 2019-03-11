@@ -62,6 +62,7 @@ APNGPlayerState* APNGPlayerControllerMain::GetPNGPlayerState() const
 {
 	APNGPlayerState* state = GetPlayerState<APNGPlayerState>();
 	ensure(state);
+
 	return state;
 }
 

@@ -8,23 +8,12 @@ void UPNGMainBackgroundWidget::InitializeBP(UTextBlock* Status, UTextBlock* Play
 	mStatusText = Status;
 	mPlayer1ScoreText = Player1Score;
 	mPlayer2ScoreText = Player2Score;
-
-	UE_LOG(LogType, Log, TEXT("PNGMainBackgroundWidget::InitializeBP"));
 }
 
 void UPNGMainBackgroundWidget::UpdateStatus(const FString& Value)
 {
-	UE_LOG(LogType, Log, TEXT("PNGMainBackgroundWidget::UpdateStatus"));
-
-	if (mStatusText)
-	{
-
-	
 	ensure(mStatusText);
-
 	mStatusText->SetText(FText::FromString(Value));
-}
-
 }
 
 void UPNGMainBackgroundWidget::UpdateScore(int Player1Score, int Player2Score)

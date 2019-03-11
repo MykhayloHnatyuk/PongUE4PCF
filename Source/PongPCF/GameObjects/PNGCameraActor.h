@@ -21,16 +21,26 @@ protected:
 
 	void UpdateColor(float DeltaTime);
 
+	// Default camera tint color angle on a Color Wheel.
 	UPROPERTY(EditAnywhere, Category = "Pong|Tint Change")
-	float DefaultColorUpdateSpeed;
-	UPROPERTY(EditAnywhere, Category = "Pong|Tint Change")
-	float StartingPlayColorUpdateSpeed;
+	float DefaultColorAngle;
+	// Color angle step that is applied when a ball hits something.
 	UPROPERTY(EditAnywhere, Category = "Pong|Tint Change")
 	float HitColorUpdateStep;
 
+	// Default speed if interpolation through the Color Wheel.
 	UPROPERTY(EditAnywhere, Category = "Pong|Tint Change")
-	float DefaultColorAngle;
+	float DefaultColorUpdateSpeed;
 
+	// Speed if interpolation through the Color Wheel when starting/restarting a play.
+	UPROPERTY(EditAnywhere, Category = "Pong|Tint Change")
+	float StartingPlayColorUpdateSpeed;
+
+	// Speed if interpolation through the Color Wheel when play was finished.
+	UPROPERTY(EditAnywhere, Category = "Pong|Tint Change")
+	float PlayFinishedColorUpdateSpeed;
+
+	// Color curve used to interpolate through the custom Color Wheel.
 	UPROPERTY(EditDefaultsOnly, Category = "Pong|Tint Change")
 	UCurveLinearColor* ColorCurve;
 

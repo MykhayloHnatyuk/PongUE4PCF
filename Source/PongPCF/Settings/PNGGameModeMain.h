@@ -21,6 +21,7 @@ class PONGPCF_API APNGGameModeMain : public AGameModeBase
 
 	virtual void BeginPlay() override;
 
+	// Choose proper spawn location for our player.
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Pong|DynamicActors")
@@ -37,6 +38,7 @@ private:
 	UFUNCTION(Reliable, Server, WithValidation)
 	void ServerRPCSpawnBall();
 
+	// Go back to Lobby scene.
 	void ExitLevel() const;
 
 	UPROPERTY()

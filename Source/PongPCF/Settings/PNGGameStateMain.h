@@ -44,7 +44,7 @@ protected:
 public:
 
 	void TrySwitchState(PNGGameState value);
-	PNGGameState GetState() const { return mCurrentState; }
+	PNGGameState GetCurrentState() const { return mCurrentState; }
 	PNGGameState GetDesiredState() const { return mDesireState; }
 
 	float GetFixedServerWorldTimeSeconds() const { return mFixedServerTimeSeconds; }
@@ -62,7 +62,7 @@ public:
 
 private:
 
-	void SetState(PNGGameState Value) { mCurrentState = Value; }
+	void SetCurrentState(PNGGameState Value) { mCurrentState = Value; }
 
 	UFUNCTION(Reliable, NetMulticast)
 	void MulticastRPCNotifyStateChange(PNGGameState NewState);
@@ -70,20 +70,28 @@ private:
 	UFUNCTION(Reliable, NetMulticast)
 	void MulticastRPCNotifyScoreChange(int Player1Score, int Player2Score);
 
+	// Update local variable of a server time, 
+	// to make sure that they stay the same even when time is not replicated.
 	void UpdateFixedServerTimeSeconds(float DeltaTime);
 
+	// Enum type to state class object representation.
 	TMap<PNGGameState, FPNGBaseGameState*> mHandlers;
+	// Available state transitions for current (key) state.
 	TMap<PNGGameState, TArray<PNGGameState>> mTransitions;
 
+	// Our current state.
 	PNGGameState mCurrentState;
+	// State we want to reach to.
 	PNGGameState mDesireState;
 
 	FPNGGameStateChangedEvent GameStateChangedEvent;
 	FPNGGameScoreChangedEvent GameScoreChangedEvent;
 
+	// Server time after local update.
 	float mFixedServerTimeSeconds;
 };
 
+// Base state class of a state machine.
 USTRUCT()
 struct FPNGBaseGameState
 {
@@ -91,19 +99,26 @@ struct FPNGBaseGameState
 
 	virtual ~FPNGBaseGameState() = default;
 
+	// Returns true if we are ready to enter this state.
 	virtual bool IsReadyForActivation(UWorld* World, APNGGameStateMain* GameStateActor) const { return true; }
+	// Called when we enter this state.
 	virtual void StartState(UWorld* World) { MarkExit(false); };
+	// Called on tick if this is our current state.
 	virtual void ProcessState(UWorld* World) {};
+	// Called when we exit this state.
 	virtual void EndState(UWorld* World) {};
-
+	
+	// Returns true if we are ready to leave this state.
 	bool IsReadyForExit() const { return mIsReadyForExit; }
 
 protected:
 
+	// Mark this state as ready for exit (ready to make transition to the next one).
 	void MarkExit(bool Value) { mIsReadyForExit = Value; }
 
 private:
 
+	// True if we are ready to transition to the next state.
 	bool mIsReadyForExit;
 };
 

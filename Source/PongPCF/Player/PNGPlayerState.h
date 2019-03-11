@@ -21,6 +21,7 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const override;
 
+	// If we can start the play. 
 	UPROPERTY(replicatedUsing = OnRep_IsReady, BlueprintReadOnly, Category = PlayerState)
 	bool bIsReady;
 

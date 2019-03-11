@@ -27,10 +27,12 @@ void APNGMainBackgroundMenuActor::InitializeBP(UWidgetComponent* MainWidgetCompo
 #define STATUS_TEXT_STARTING_PLAY "get ready"
 #define STATUS_TEXT_PLAYING "score %d more to win"
 #define STATUS_TEXT_WON "yeah! let's do it again"
-#define STATUS_TEXT_LOSE "you lost... let's try again"
+#define STATUS_TEXT_LOSE "you lost :( let's try again"
 #define STATUS_TEXT_DEFAULT ""
 void APNGMainBackgroundMenuActor::OnGameStateChangedHandler(PNGGameState NewState)
 {
+	// Let's update our status text based on a current game state.
+
 	ensure(mMainMenuWidget);
 
 	FString Text = STATUS_TEXT_DEFAULT;

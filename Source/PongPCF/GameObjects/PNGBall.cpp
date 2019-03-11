@@ -10,9 +10,6 @@
 #include "PNGGoalZone.h"
 #include "Player/PNGPawnMain.h"
 
-
-#pragma optimize ("", off)
-
 #define SPHERE_COMP_NAME "Sphere"
 APNGBall::APNGBall()
 {
@@ -37,14 +34,11 @@ void APNGBall::Tick(float DeltaTime)
 
 void APNGBall::StopBallAtLocation(FVector Location)
 {
-	if (!GetWorld()->IsServer())
+	if (GetWorld()->IsServer())
 	{
-		UE_LOG(LogType, Log, TEXT("APNGBall::StopBallAtLocation not server."));
-		return;
-	}
-
-	FPush push = FPush(Location, GetFixedServerTime());
-	MulticastRPCUpdatePushData(push);
+		FPush push = FPush(Location, GetFixedServerTime());
+		MulticastRPCUpdatePushData(push);
+	}	
 }
 
 #define RANDOM_DIRECTION_POWER FVector(1.0f, 1.0f, 0.0f)
@@ -52,7 +46,7 @@ void APNGBall::PushBallInRandomDirection()
 {
 	if (!GetWorld()->IsServer())
 	{
-		UE_LOG(LogType, Log, TEXT("APNGBall::PushBallInRandomDirection not server."));
+		UE_LOG(LogType, Error, TEXT("APNGBall::PushBallInRandomDirection called not on server!"));
 		return;
 	}
 
@@ -75,15 +69,8 @@ void APNGBall::PushBallInRandomDirection()
 
 void APNGBall::UpdateLocation()
 {
-	if (!GetWorld())
-	{
-		UE_LOG(LogType, Error, TEXT("APNGBall::UpdateLocation GetWorld() not valid!"));
-		return;
-	}
-
 	float serverTime = GetFixedServerTime();
 	const FVector newLocation = GetLocationByTime(serverTime);
-
 	SetActorLocation(newLocation, true);
 }
 
@@ -99,6 +86,7 @@ FVector APNGBall::GetLocationByTime(float Time) const
 #define PAWN_HIT_POINT_INFLUENCE_POWER 2.0f
 void APNGBall::OnBeginOverlap(UPrimitiveComponent * OverlappedComp, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
+	// Broadcast event for visual effects on all clients.
 	OnBallHitActor().Broadcast(OtherActor, SweepResult.ImpactPoint);
 
 	if (!GetWorld()->IsServer())
@@ -106,15 +94,12 @@ void APNGBall::OnBeginOverlap(UPrimitiveComponent * OverlappedComp, AActor * Oth
 		return;
 	}
 
-
 	if (OtherActor != nullptr)
 	{
 		// Initialize new push.
 		FPush newPush = FPush(GetActorLocation(), GetFixedServerTime());
 		// We might change Speed later.
 		newPush.Speed = mLastPush.Speed;
-
-		UE_LOG(LogType, Log, TEXT("APNGBall::OnBeginOverlap  Time: %f  Loc: %s  HitNormal: %s"), newPush.Time, *newPush.StartLocation.ToString(), *SweepResult.Normal.ToString());
 
 		// Now let's, calculate new direction.
 		FVector newDirection = FVector::ZeroVector;
@@ -149,9 +134,6 @@ void APNGBall::OnBeginOverlap(UPrimitiveComponent * OverlappedComp, AActor * Oth
 		newDirection *= FVector(1, 1, 0);
 		newPush.Direction = newDirection.GetSafeNormal();
 
-
-		UE_LOG(LogType, Log, TEXT("APNGBall::OnBeginOverlap  NewLoc: %s  NewDir: %s"), *newPush.StartLocation.ToString(), *mLastPush.Direction.ToString());
-
 		MulticastRPCUpdatePushData(newPush);
 	}
 }
@@ -163,5 +145,3 @@ void APNGBall::MulticastRPCUpdatePushData_Implementation(FPush Push)
 	mLastPush.Time = Push.Time;
 	mLastPush.Speed = Push.Speed;
 }
-
-#pragma optimize ("", on)

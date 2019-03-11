@@ -83,7 +83,7 @@ void APNGGameStateMain::ProcessStateMachine()
 		return;
 	}
 
-	PNGGameState currentStateType = GetState();
+	PNGGameState currentStateType = GetCurrentState();
 	FPNGBaseGameState* currentState = mHandlers.FindRef(currentStateType);
 
 	currentState->ProcessState(GetWorld());
@@ -98,7 +98,7 @@ void APNGGameStateMain::ProcessStateMachine()
 			if(nextState->IsReadyForActivation(GetWorld(), this))
 			{
 				currentState->EndState(GetWorld());
-				SetState(transitionToSate);
+				SetCurrentState(transitionToSate);
 				nextState->StartState(GetWorld());
 
 				if(mDesireState == transitionToSate)
@@ -139,7 +139,7 @@ void APNGGameStateMain::MulticastRPCNotifyStateChange_Implementation(PNGGameStat
 	// First, let's update state value for our clients.
 	if (!GetWorld()->IsServer())
 	{
-		SetState(NewState);
+		SetCurrentState(NewState);
 	}
 
 	// Now, let's broadcast it locally for everybody.
@@ -164,8 +164,8 @@ void APNGGameStateMain::MulticastRPCNotifyScoreChange_Implementation(int Player1
 
 void APNGGameStateMain::UpdateFixedServerTimeSeconds(float DeltaTime)
 {
-	float realServerTimeSecods = GetServerWorldTimeSeconds();
 	mFixedServerTimeSeconds += DeltaTime;
+	float realServerTimeSecods = GetServerWorldTimeSeconds();
 
 	if(mFixedServerTimeSeconds < realServerTimeSecods)
 	{
@@ -224,7 +224,7 @@ void FPNGGSSetupPlay::StartState(UWorld* World)
 
 bool FPNGGSStartingPlay::IsReadyForActivation(UWorld* World, APNGGameStateMain* GameStateActor) const
 {
-	return GameStateActor->GetState() == PNGGameState::gsSetupPlay || GameStateActor->GetDesiredState() == PNGGameState::gsStartingPlay;
+	return GameStateActor->GetCurrentState() == PNGGameState::gsSetupPlay || GameStateActor->GetDesiredState() == PNGGameState::gsStartingPlay;
 }
 
 void FPNGGSStartingPlay::StartState(UWorld* World)

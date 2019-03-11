@@ -20,16 +20,20 @@ protected:
 
 	virtual void PlayerTick(float DeltaTime) override;
 
+	// Used to bind keyboard inputs.
 	virtual void SetupInputComponent() override;
 
 public:
 
+	// Returns true if we are Player#1.
 	bool IsPlayerOne() const;
 
+	// Returns casted player state.
 	APNGPlayerState* GetPNGPlayerState() const;
 
 private:
 
+	// Initialize custom player state data. PNGGameState will not proceed if it is not called.
 	UFUNCTION(Reliable, Server, WithValidation)
 	void ServerRPCIntializeStateData();
 
@@ -42,9 +46,12 @@ private:
 	UFUNCTION(Reliable, NetMulticast)
 	void MulticastRPCMoveTo(FVector NewLocation);
 
+	// Move pawn to selected location.
 	void MoveTo(FVector NewLocation);
 
+	// This where the keyboard input comes to.
 	void MoveUpInput(float AxisValue);
 
+	// Last cached input.
 	float mLastMoveAxisValue;
 };
